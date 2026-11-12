@@ -5,6 +5,7 @@ import type { AppData } from '../types';
 import { SegmentedTabs } from '../ui/SegmentedTabs';
 import { CardioPanel } from './CardioPanel';
 import { StrengthPanel } from './StrengthPanel';
+import { WeeklyPanel } from './WeeklyPanel';
 
 interface FitnessPageProps {
   data: AppData;
@@ -12,6 +13,7 @@ interface FitnessPageProps {
 }
 
 const fitnessTabs = [
+  { value: 'weekly', label: '本週' },
   { value: 'cardio', label: '有氧' },
   { value: 'strength', label: '無氧' },
 ];
@@ -106,7 +108,7 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
 }
 
 export function FitnessPage({ data, setData }: FitnessPageProps) {
-  const [activeTab, setActiveTab] = useState('cardio');
+  const [activeTab, setActiveTab] = useState('weekly');
 
   return (
     <main className="space-y-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)]">
@@ -127,7 +129,9 @@ export function FitnessPage({ data, setData }: FitnessPageProps) {
         accent="fit"
       />
 
-      {activeTab === 'cardio' ? (
+      {activeTab === 'weekly' ? (
+        <WeeklyPanel data={data} setData={setData} />
+      ) : activeTab === 'cardio' ? (
         <CardioPanel data={data} setData={setData} />
       ) : (
         <StrengthPanel data={data} setData={setData} />

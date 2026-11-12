@@ -66,6 +66,7 @@ fitfood/
       ├─ FitnessPage.tsx
       ├─ CardioPanel.tsx
       ├─ StrengthPanel.tsx
+      ├─ WeeklyPanel.tsx
       └─ fitnessDefaults.ts
 ```
 

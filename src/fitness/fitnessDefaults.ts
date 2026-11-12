@@ -1,4 +1,4 @@
-import type { CardioPlan, StrengthPlan } from '../types';
+import type { CardioPlan, StrengthPlan, WeeklyDay } from '../types';
 
 export const defaultCardioPlans: CardioPlan[] = [
   {
@@ -120,4 +120,14 @@ export const defaultStrengthPlans: StrengthPlan[] = [
       { name: '平板撐', sets: 3, reps: '30–45 秒', restSec: 45 },
     ],
   },
+];
+
+export const defaultWeeklyPlan: WeeklyDay[] = [
+  { weekday: 1, cardioPlanId: 'cardio-treadmill-12330', strengthFocus: 'full' },
+  { weekday: 2, cardioPlanId: 'cardio-stair-steady', strengthFocus: null },
+  { weekday: 3, cardioPlanId: 'cardio-treadmill-interval', strengthFocus: null },
+  { weekday: 4, cardioPlanId: 'cardio-treadmill-steady', strengthFocus: 'full' },
+  { weekday: 5, cardioPlanId: 'cardio-stair-interval', strengthFocus: null },
+  { weekday: 6, cardioPlanId: 'cardio-stair-endurance', strengthFocus: null },
+  { weekday: 0, cardioPlanId: null, strengthFocus: null },
 ];

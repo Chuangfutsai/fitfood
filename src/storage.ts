@@ -7,6 +7,7 @@ import {
 import {
   defaultCardioPlans,
   defaultStrengthPlans,
+  defaultWeeklyPlan,
 } from './fitness/fitnessDefaults';
 
 const STORAGE_KEY = 'fitfood:v1';
@@ -19,6 +20,8 @@ function createDefaultData(): AppData {
     cardioPlans: defaultCardioPlans,
     strengthPlans: defaultStrengthPlans,
     lastStrengthFocus: null,
+    weeklyPlan: defaultWeeklyPlan,
+    weeklyLog: {},
   };
 }
 
@@ -30,7 +33,25 @@ export function loadData(): AppData {
       return createDefaultData();
     }
 
-    return JSON.parse(storedData) as AppData;
+    const parsedData = JSON.parse(storedData) as Partial<AppData> | null;
+
+    if (!parsedData || typeof parsedData !== 'object' || Array.isArray(parsedData)) {
+      return createDefaultData();
+    }
+
+    return {
+      ...createDefaultData(),
+      ...parsedData,
+      weeklyPlan: Array.isArray(parsedData.weeklyPlan)
+        ? parsedData.weeklyPlan
+        : defaultWeeklyPlan,
+      weeklyLog:
+        parsedData.weeklyLog &&
+        typeof parsedData.weeklyLog === 'object' &&
+        !Array.isArray(parsedData.weeklyLog)
+          ? parsedData.weeklyLog
+          : {},
+    };
   } catch {
     return createDefaultData();
   }

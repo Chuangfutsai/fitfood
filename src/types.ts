@@ -6,4 +6,5 @@ export interface CardioPlan { id: string; machine: CardioMachine; name: string; 
 export type StrengthFocus = 'push' | 'pull' | 'legs' | 'full';
 export interface Exercise { name: string; sets: number; reps: string; restSec: number; }
 export interface StrengthPlan { id: string; focus: StrengthFocus; name: string; exercises: Exercise[]; }
-export interface AppData { version: 1; ingredients: Ingredient[]; dishes: Dish[]; cardioPlans: CardioPlan[]; strengthPlans: StrengthPlan[]; lastStrengthFocus: StrengthFocus | null; }
+export interface WeeklyDay { weekday: 0 | 1 | 2 | 3 | 4 | 5 | 6; cardioPlanId: string | null; strengthFocus: StrengthFocus | null; }
+export interface AppData { version: 1; ingredients: Ingredient[]; dishes: Dish[]; cardioPlans: CardioPlan[]; strengthPlans: StrengthPlan[]; lastStrengthFocus: StrengthFocus | null; weeklyPlan: WeeklyDay[]; weeklyLog: Record<string, boolean>; }
