@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLang } from '../i18n/LanguageContext';
 import { dishTranslations } from '../i18n/dataTranslations';
 
@@ -11,6 +11,7 @@ interface WheelItem {
 interface WheelProps {
   items: WheelItem[];
   onResult: (id: string) => void;
+  onSpinningChange?: (spinning: boolean) => void;
 }
 
 const CENTER_X = 180;
@@ -211,9 +212,13 @@ function EnglishWheelLabel({ item, centerAngle, wheelAngle, color }: {
   );
 }
 
-export function Wheel({ items, onResult }: WheelProps) {
+export function Wheel({ items, onResult, onSpinningChange }: WheelProps) {
   const { lang, t } = useLang();
-  const wheelItems = items.slice(0, 8);
+  const choices = items.slice(0, 8);
+  // Repeat two or three distinct choices evenly without adjacent duplicates.
+  const wheelItems = choices.length >= 2 && choices.length <= 3
+    ? Array.from({ length: 6 }, (_, index) => choices[index % choices.length])
+    : choices;
   const [angle, setAngle] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
@@ -221,6 +226,8 @@ export function Wheel({ items, onResult }: WheelProps) {
   const currentAngleRef = useRef(0);
   const pendingResultRef = useRef<string | null>(null);
   const pendingWinnerIndexRef = useRef<number | null>(null);
+
+  useEffect(() => () => onSpinningChange?.(false), [onSpinningChange]);
 
   if (wheelItems.length < 2) {
     return null;
@@ -251,6 +258,7 @@ export function Wheel({ items, onResult }: WheelProps) {
     currentAngleRef.current = nextAngle;
     pendingWinnerIndexRef.current = nextWinnerIndex;
     pendingResultRef.current = wheelItems[nextWinnerIndex].id;
+    onSpinningChange?.(true);
     setWinnerIndex(null);
     setIsSpinning(true);
     setAngle(nextAngle);
@@ -276,6 +284,7 @@ export function Wheel({ items, onResult }: WheelProps) {
     pendingResultRef.current = null;
     pendingWinnerIndexRef.current = null;
     setIsFlashing(false);
+    onSpinningChange?.(false);
 
     if ('vibrate' in navigator) {
       navigator.vibrate(30);
@@ -339,7 +348,7 @@ export function Wheel({ items, onResult }: WheelProps) {
             const isWinner = winnerIndex === index;
 
             return (
-              <g key={item.id}>
+              <g key={`${item.id}-${index}`} data-wheel-slot={index} data-dish-id={item.id}>
                 <motion.path
                   d={createSlicePath(sliceStart, sliceEnd)}
                   className={`${color.fill} stroke-white`}

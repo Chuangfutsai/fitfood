@@ -165,6 +165,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
   const [activeTab, setActiveTab] = useState('wheel');
   const [wheelMode, setWheelMode] = useState<'dish' | 'combo'>('dish');
   const [shuffleKey, setShuffleKey] = useState(0);
+  const [wheelBusy, setWheelBusy] = useState(false);
   const [resultDishId, setResultDishId] = useState<string | null>(null);
   const [comboResult, setComboResult] = useState<ComboResult | null>(null);
   const [mealNotice, setMealNotice] = useState<MealNotice | null>(null);
@@ -187,6 +188,10 @@ export function FoodPage({ data, setData }: FoodPageProps) {
     () => getAvailableDishes(data),
     [data.dishes, data.ingredients],
   );
+  const [stockHintBefore, stockHintAfter] = t(
+    availableDishes.length === 1 ? 'food.wheel.stockHintOne' : 'food.wheel.stockHint',
+    { count: availableDishes.length },
+  ).split('{pantry}');
 
   const wheelDishes = useMemo(() => {
     const shuffled = [...availableDishes].sort(() => Math.random() - 0.5);
@@ -196,6 +201,12 @@ export function FoodPage({ data, setData }: FoodPageProps) {
 
   const resultDish =
     data.dishes.find((dish) => dish.id === resultDishId) ?? null;
+
+  const openDish = (id: string) => {
+    mealAcceptedRef.current = null;
+    setAcceptedMealId(null);
+    setResultDishId(id);
+  };
 
   const recordMeal = () => {
     if (!resultDish || mealAcceptedRef.current) return;
@@ -283,7 +294,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
       {activeTab === 'dishes' && <DishList data={data} setData={setData} />}
 
       {activeTab === 'wheel' && (
-        <section className="space-y-5">
+        <section className={wheelMode === 'dish' ? 'space-y-4' : 'space-y-5'}>
           <div className="grid grid-cols-2 gap-2 rounded-full bg-surface-2 p-1">
             <button
               type="button"
@@ -312,34 +323,71 @@ export function FoodPage({ data, setData }: FoodPageProps) {
           {wheelMode === 'dish' && (
             <>
               <TodayMeals data={data} setData={setData} onNotice={setMealNotice} />
-              {wheelDishes.length >= 2 ? (
-                <div className="space-y-4">
+              <div className="space-y-2">
+                {availableDishes.length >= 9 ? (
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs text-muted">
                       {t('food.wheel.selection', { count: availableDishes.length, selected: wheelDishes.length })}
                     </p>
                     <button
                       type="button"
-                      className="flex h-11 shrink-0 items-center gap-1 text-sm font-medium text-food transition-transform active:scale-[0.97]"
+                      className="flex h-11 shrink-0 items-center gap-1 text-sm font-medium text-food transition-transform active:scale-[0.97] disabled:opacity-50"
                       onClick={shuffleWheel}
+                      disabled={wheelBusy}
                     >
                       <Shuffle size={16} />
                       <span className="truncate">{t('food.wheel.shuffle')}</span>
                     </button>
                   </div>
+                ) : availableDishes.length > 0 ? (
+                  <p className="whitespace-nowrap text-xs leading-5 text-muted">
+                    {stockHintBefore}
+                    <button
+                      type="button"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold text-food underline underline-offset-2"
+                      onClick={() => setActiveTab('pantry')}
+                    >
+                      {t('food.wheel.pantryLink')}
+                    </button>
+                    {stockHintAfter}
+                  </p>
+                ) : null}
+                {wheelDishes.length >= 2 ? (
                   <Wheel
                     items={wheelDishes.map((dish) => ({
                       id: dish.id,
                       label: tDish(dish),
                     }))}
-                    onResult={(id) => {
-                      mealAcceptedRef.current = null;
-                      setAcceptedMealId(null);
-                      setResultDishId(id);
-                    }}
+                    onResult={openDish}
+                    onSpinningChange={setWheelBusy}
                   />
-                </div>
-              ) : (
+                ) : wheelDishes.length === 1 ? (
+                  <Card className="space-y-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+                    <div className="flex items-center gap-4">
+                      <DishImage
+                        key={wheelDishes[0].id}
+                        id={wheelDishes[0].id}
+                        name={tDish(wheelDishes[0])}
+                        className="h-24 w-24 shrink-0 rounded-[16px]"
+                      />
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <h2 className="break-words text-[18px] font-bold text-text">{tDish(wheelDishes[0])}</h2>
+                        <p className="text-sm text-muted tabular-nums">
+                          {recipes[wheelDishes[0].id]
+                            ? t('recipe.energy', { count: recipes[wheelDishes[0].id].kcal })
+                            : t('food.wheel.unknownEnergy')}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="h-12 w-full rounded-[14px] bg-food px-4 text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+                      onClick={() => openDish(wheelDishes[0].id)}
+                    >
+                      {t('food.result.accept')}
+                    </button>
+                  </Card>
+                ) : (
                 <Card className="space-y-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
                   <p className="text-[15px] font-medium text-text">
                     {t('food.wheel.empty')}
@@ -352,7 +400,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                     {t('food.wheel.pantry')}
                   </button>
                 </Card>
-              )}
+                )}
+              </div>
             </>
           )}
 

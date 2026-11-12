@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Trash2, UtensilsCrossed } from 'lucide-react';
+import { useEffect, useId, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, Trash2, UtensilsCrossed } from 'lucide-react';
 import type { AppData, MealEntry } from '../types';
 import { Card } from '../ui/Card';
 import { useLang } from '../i18n/LanguageContext';
@@ -40,6 +41,8 @@ function MealImage({ dishId, name }: { dishId: string; name: string }) {
 export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
   const { t, tDish, formatDate } = useLang();
   const [today, setToday] = useState(() => new Date());
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -69,6 +72,12 @@ export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
   const todayKey = getLocalDateKey(today);
   const entries = data.mealLog[todayKey] ?? [];
   const nutrition = getTodayNutrition(data, today);
+  const hasEntries = entries.length > 0;
+  const isExpanded = expanded && hasEntries;
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [todayKey, hasEntries]);
 
   const removeMeal = (entry: MealEntry, index: number) => {
     const dateKey = todayKey;
@@ -120,20 +129,39 @@ export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
   };
 
   return (
-    <Card className="shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[16px] font-bold text-text">{t('food.meals.title')}</h2>
-        {entries.length > 0 && (
-          <p className="ml-auto max-w-full text-right text-xs text-muted tabular-nums">
-            {t('food.meals.total', { kcal: nutrition.kcal, g: nutrition.proteinG })}
-          </p>
-        )}
-      </div>
+    <Card className="overflow-hidden p-0! shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+      <button
+        type="button"
+        aria-expanded={isExpanded}
+        aria-controls={listId}
+        disabled={!hasEntries}
+        className="flex h-[54px] w-full items-center gap-2 px-3 text-left text-xs leading-4 transition-transform enabled:active:scale-[0.97]"
+        onClick={() => setExpanded((previous) => !previous)}
+      >
+        <span className="shrink-0 font-bold text-text">{t('food.meals.title')}</span>
+        <span className="min-w-0 flex-1 truncate text-right text-muted tabular-nums">
+          {hasEntries
+            ? t(entries.length === 1 ? 'food.meals.summaryOne' : 'food.meals.summary', { n: entries.length, kcal: nutrition.kcal, g: nutrition.proteinG })
+            : t('food.meals.notRecorded')}
+        </span>
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className={`shrink-0 text-muted transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''} ${hasEntries ? '' : 'opacity-40'}`}
+        />
+      </button>
 
-      {entries.length === 0 ? (
-        <p className="mt-3 text-sm leading-6 text-muted">{t('food.meals.empty')}</p>
-      ) : (
-        <ul className="mt-3 divide-y divide-line">
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            id={listId}
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+        <ul className="divide-y divide-line px-3 pb-3">
           {entries.map((entry, index) => {
             const dish = data.dishes.find((item) => item.id === entry.dishId);
             const name = tDish(dish ?? {
@@ -169,7 +197,9 @@ export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
             );
           })}
         </ul>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Card>
   );
 }
