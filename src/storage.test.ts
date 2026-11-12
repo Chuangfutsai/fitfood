@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MealEntry } from './types';
 import { recipes } from './food/recipes';
-import { createMealId, loadData, sanitizeMealLog } from './storage';
+import { createDefaultData, createMealId, getStorageIssue, InvalidAppDataError, loadData, migrations, normalizeAppData, sanitizeMealLog, saveData, UnsupportedDataVersionError } from './storage';
 import { defaultCardioPlans } from './fitness/fitnessDefaults';
 import { defaultDishes, defaultIngredients } from './food/foodDefaults';
 
@@ -155,7 +155,7 @@ describe('loadData', () => {
   it.each([null, '{invalid', 'null', '[]', '42'])('returns usable default data for invalid or missing storage: %s', (stored) => {
     mockStorage(stored);
     const data = loadData();
-    expect(data.version).toBe(1);
+    expect(data.version).toBe(2);
     expect(data.dishes.length).toBeGreaterThan(0);
     expect(data.weeklyPlan).toHaveLength(7);
     expect(data.mealLog).toEqual({});
@@ -193,7 +193,7 @@ describe('loadData', () => {
     };
     mockStorage(JSON.stringify({ cardioPlans: [edited] }));
     const data = loadData();
-    expect(data.cardioPlans).toHaveLength(24);
+    expect(data.cardioPlans).toHaveLength(19);
     expect(data.cardioPlans.find((plan) => plan.id === edited.id)).toEqual(edited);
   });
 
@@ -209,7 +209,7 @@ describe('loadData', () => {
       cardioPlans: [defaultCardioPlans[0], invalid],
     }));
     const data = loadData();
-    expect(data.cardioPlans).toHaveLength(24);
+    expect(data.cardioPlans).toHaveLength(19);
     expect(data.cardioPlans.some((plan) => plan.id === invalid.id)).toBe(false);
     expect(data.cardioPlans).toContainEqual(defaultCardioPlans[0]);
     expect(storage.setItem).toHaveBeenCalledWith('fitfood:v1', JSON.stringify(data));
@@ -231,7 +231,7 @@ describe('loadData', () => {
     expect(storage.setItem).toHaveBeenCalledWith('fitfood:v1', JSON.stringify(data));
   });
 
-  it('keeps custom cardio plans alongside all defaults', () => {
+  it('keeps custom cardio plans and introduces new defaults without restoring absent original plans', () => {
     const custom = {
       id: 'cardio-custom-rower',
       machine: 'rower',
@@ -241,9 +241,9 @@ describe('loadData', () => {
     };
     mockStorage(JSON.stringify({ cardioPlans: [custom] }));
     const data = loadData();
-    expect(data.cardioPlans).toHaveLength(25);
+    expect(data.cardioPlans).toHaveLength(19);
     expect(data.cardioPlans[0]).toEqual(custom);
-    expect(data.cardioPlans).toEqual(expect.arrayContaining(defaultCardioPlans));
+    expect(data.cardioPlans).toEqual(expect.arrayContaining(defaultCardioPlans.filter((plan) => !['treadmill', 'stairclimber'].includes(plan.machine))));
   });
 
   it('does not duplicate cardio plans or rewrite storage after migration is complete', () => {
@@ -269,7 +269,7 @@ describe('loadData', () => {
     }));
     const data = loadData();
     expect(data.dishes).toContainEqual({ ...customDish, meals: ['lunch', 'dinner'] });
-    expect(data.dishes).toHaveLength(defaultDishes.length + 1);
+    expect(data.dishes).toHaveLength(6);
     expect(data.mealLog).toEqual({ [date]: [validEntry] });
     expect(data.weeklyLog).toEqual({ [date]: true });
     expect(storage.getItem).toHaveBeenCalledWith('fitfood:v1');
@@ -389,5 +389,184 @@ describe('loadData', () => {
   it('discards corrupt weight entries while retaining valid history', () => {
     mockStorage(JSON.stringify({ weightLog: { [date]: 62, bad: 61, '2026-11-11': '62', '2026-11-10': -1, '2026-11-09': null } }));
     expect(loadData().weightLog).toEqual({ [date]: 62 });
+  });
+});
+
+describe('versioned defaults and schema validation', () => {
+  function memoryStorage(initial: unknown) {
+    let raw = JSON.stringify(initial);
+    const storage = {
+      getItem: vi.fn(() => raw),
+      setItem: vi.fn((_key: string, value: string) => { raw = value; }),
+    };
+    vi.stubGlobal('localStorage', storage);
+    return { storage, raw: () => raw };
+  }
+
+  it('registers the explicit v1 to v2 migration', () => {
+    expect(migrations.map(({ from, to }) => [from, to])).toEqual([[1, 2]]);
+    const data = normalizeAppData({ version: 1, ingredients: [], dishes: [], cardioPlans: [] });
+    expect(data.version).toBe(2);
+    expect(data.ingredients).toHaveLength(5);
+    expect(data.dishes).toHaveLength(5);
+    expect(data.cardioPlans).toHaveLength(18);
+    expect(data.knownDefaultIds.ingredients).toHaveLength(34);
+    expect(data.knownDefaultIds.dishes).toHaveLength(55);
+    expect(data.knownDefaultIds.cardioPlans).toHaveLength(24);
+  });
+
+  it.each(['ingredients', 'dishes', 'cardioPlans'] as const)('keeps a deleted known default in %s deleted after repeated loads', (key) => {
+    const data = createDefaultData();
+    const deletedId = data[key][0].id;
+    const next = { ...data, [key]: data[key].filter((item) => item.id !== deletedId) };
+    const stored = memoryStorage(next);
+    const first = loadData();
+    const second = loadData();
+    expect(first[key].some((item) => item.id === deletedId)).toBe(false);
+    expect(second[key].some((item) => item.id === deletedId)).toBe(false);
+    expect(second.knownDefaultIds[key]).toContain(deletedId);
+    expect(JSON.parse(stored.raw())[key].some((item: { id: string }) => item.id === deletedId)).toBe(false);
+  });
+
+  it('keeps a legacy deleted original dish deleted while adding breakfasts', () => {
+    const data = createDefaultData();
+    const originalDishes = data.dishes.filter((dish) => !dish.meals.every((meal) => meal === 'breakfast'));
+    const stored = memoryStorage({ version: 1, dishes: originalDishes.filter((dish) => dish.id !== 'dish-tomato-egg') });
+    const first = loadData();
+    expect(first.dishes).toHaveLength(54);
+    expect(first.dishes.some((dish) => dish.id === 'dish-tomato-egg')).toBe(false);
+    expect(first.dishes.some((dish) => dish.id === 'dish-spinach-omelette')).toBe(true);
+    expect(loadData()).toEqual(first);
+    expect(stored.storage.setItem).toHaveBeenCalledOnce();
+  });
+
+  it.each(['ingredients', 'dishes', 'cardioPlans'] as const)('adds a newly introduced %s ID only once', (key) => {
+    const data = createDefaultData();
+    const newId = data[key].at(-1)!.id;
+    const stored = memoryStorage({
+      ...data,
+      [key]: data[key].filter((item) => item.id !== newId),
+      knownDefaultIds: { ...data.knownDefaultIds, [key]: data.knownDefaultIds[key].filter((id) => id !== newId) },
+    });
+    const migrated = loadData();
+    expect(migrated[key].filter((item) => item.id === newId)).toHaveLength(1);
+    expect(migrated.knownDefaultIds[key]).toContain(newId);
+    expect(loadData()).toEqual(migrated);
+    expect(stored.storage.setItem).toHaveBeenCalledOnce();
+  });
+
+  it('does not read or write storage during pure normalization', () => {
+    const getItem = vi.fn(() => { throw new Error('No storage access'); });
+    const setItem = vi.fn(() => { throw new Error('No storage access'); });
+    vi.stubGlobal('localStorage', { getItem, setItem });
+    const old = { version: 1, mealLog: { [date]: [{ dishId: 'dish-tomato-egg', at: validEntry.at }] } };
+    expect(normalizeAppData(old)).toEqual(normalizeAppData(old));
+    expect(getItem).not.toHaveBeenCalled();
+    expect(setItem).not.toHaveBeenCalled();
+    expect(old).toEqual({ version: 1, mealLog: { [date]: [{ dishId: 'dish-tomato-egg', at: validEntry.at }] } });
+  });
+
+  it.each([3, 2.5])('rejects future version %s and leaves the exact raw storage unchanged', (version) => {
+    const future = { ...createDefaultData(), version, futureField: { important: true } };
+    const stored = memoryStorage(future);
+    const before = stored.raw();
+    expect(() => normalizeAppData(future)).toThrow(UnsupportedDataVersionError);
+    expect(() => loadData()).not.toThrow();
+    expect(getStorageIssue()).toBe('future-version');
+    expect(stored.storage.setItem).not.toHaveBeenCalled();
+    expect(stored.raw()).toBe(before);
+    expect(() => saveData(createDefaultData())).toThrow(UnsupportedDataVersionError);
+    expect(stored.storage.setItem).not.toHaveBeenCalled();
+    expect(stored.raw()).toBe(before);
+  });
+
+  it('clears a previous future-version issue after reading supported data', () => {
+    memoryStorage({ version: 3 });
+    loadData();
+    memoryStorage(createDefaultData());
+    loadData();
+    expect(getStorageIssue()).toBeNull();
+  });
+
+  it.each([null, [], 1, { version: '2' }, { version: 0 }, { version: -1 }, { version: 1.5 }])('rejects invalid top-level data or schema versions %s', (raw) => {
+    expect(() => normalizeAppData(raw)).toThrow(InvalidAppDataError);
+  });
+
+  it.each([
+    { name: null }, { name: '' }, { minutes: -1 }, { minutes: 0 }, { minutes: Infinity },
+    { minutes: '10' }, { steps: null }, { steps: [1] }, { steps: 'Warm up' },
+  ])('discards malformed cardio fields: %s', (invalid) => {
+    const data = createDefaultData();
+    const plan = { ...data.cardioPlans[0], ...invalid };
+    const cleaned = normalizeAppData({ ...data, cardioPlans: [plan] });
+    expect(cleaned.cardioPlans).toEqual([]);
+    expect(cleaned.weeklyPlan.every((day) => day.cardioPlanId === null)).toBe(true);
+  });
+
+  it.each([
+    { name: 1 }, { focus: 'invalid' }, { exercises: null },
+    { exercises: [{ name: '', sets: 4, reps: '8', restSec: 90 }] },
+    { exercises: [{ name: 'Squat', sets: 0, reps: '8', restSec: 90 }] },
+    { exercises: [{ name: 'Squat', sets: 1.5, reps: '8', restSec: 90 }] },
+    { exercises: [{ name: 'Squat', sets: 4, reps: 8, restSec: 90 }] },
+    { exercises: [{ name: 'Squat', sets: 4, reps: '8', restSec: -1 }] },
+  ])('discards malformed strength plans or exercises: %s', (invalid) => {
+    const data = createDefaultData();
+    expect(normalizeAppData({ ...data, strengthPlans: [{ ...data.strengthPlans[0], ...invalid }] }).strengthPlans).toEqual([]);
+  });
+
+  it('validates weekdays and strength focus while retaining valid days', () => {
+    const data = createDefaultData();
+    const weeklyPlan = [
+      null, {}, { weekday: -1 }, { weekday: 7 }, { weekday: 1.5 }, { weekday: '1' },
+      { weekday: 0, cardioPlanId: null, strengthFocus: null },
+      { weekday: 1, cardioPlanId: data.cardioPlans[0].id, strengthFocus: 'invalid' },
+      { weekday: 2, cardioPlanId: 42, strengthFocus: 'full' },
+      { weekday: 2, cardioPlanId: null, strengthFocus: 'push' },
+    ];
+    expect(normalizeAppData({ ...data, weeklyPlan }).weeklyPlan).toEqual([
+      { weekday: 0, cardioPlanId: null, strengthFocus: null },
+      { weekday: 1, cardioPlanId: data.cardioPlans[0].id, strengthFocus: null },
+      { weekday: 2, cardioPlanId: null, strengthFocus: 'full' },
+    ]);
+    expect(normalizeAppData({ ...data, lastStrengthFocus: 'invalid' }).lastStrengthFocus).toBeNull();
+  });
+
+  it('repairs invalid collection containers to safe defaults', () => {
+    const data = normalizeAppData({ version: 2, ingredients: null, dishes: 'broken', cardioPlans: {}, strengthPlans: false, weeklyPlan: 42 });
+    expect(data.ingredients).toHaveLength(34);
+    expect(data.dishes).toHaveLength(55);
+    expect(data.cardioPlans).toHaveLength(24);
+    expect(data.strengthPlans).toHaveLength(4);
+    expect(data.weeklyPlan).toHaveLength(7);
+  });
+
+  it('cleans malformed ingredients and dishes without reviving their known IDs', () => {
+    const data = createDefaultData();
+    const cleaned = normalizeAppData({
+      ...data,
+      ingredients: [{ ...data.ingredients[0], inStock: 'true' }, null],
+      dishes: [{ ...data.dishes[0], ingredientIds: [1] }, { ...data.dishes[1], minutes: -1 }],
+    });
+    expect(cleaned.ingredients).toEqual([]);
+    expect(cleaned.dishes).toEqual([]);
+  });
+
+  it('treats corrupt known-default metadata conservatively so original deletions stay deleted', () => {
+    const data = createDefaultData();
+    const cleaned = normalizeAppData({
+      ...data, dishes: [], knownDefaultIds: { ...data.knownDefaultIds, dishes: [1, 'dish-spinach-omelette'] },
+    });
+    expect(cleaned.dishes.some((dish) => dish.id === 'dish-tomato-egg')).toBe(false);
+    expect(cleaned.dishes.some((dish) => dish.id === 'dish-spinach-omelette')).toBe(false);
+    expect(cleaned.dishes).toHaveLength(4);
+  });
+
+  it('does not perform duplicate writes when an effect saves the same state twice', () => {
+    const stored = memoryStorage({ version: 1 });
+    const data = createDefaultData();
+    saveData(data);
+    saveData(data);
+    expect(stored.storage.setItem).toHaveBeenCalledOnce();
   });
 });

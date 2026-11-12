@@ -10,7 +10,8 @@ function makeData(overrides: Partial<AppData> = {}): AppData {
   }));
 
   return {
-    version: 1,
+    version: 2,
+    knownDefaultIds: { ingredients: [], dishes: [], cardioPlans: [] },
     ingredients: [],
     dishes: [],
     cardioPlans: [],

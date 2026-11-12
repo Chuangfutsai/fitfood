@@ -1,12 +1,15 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Languages } from 'lucide-react';
-import type { CardioPlan, Dish, Ingredient } from '../types';
 import type { Sheet } from '../ui/Sheet';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { strings } from './strings';
-import type { Language } from './strings';
+import { LanguageContext, useLang } from './langContext';
+import type { Language, LanguageValue } from './langContext';
 import { cardioTranslations, dishTranslations, exerciseTranslations, ingredientTranslations } from './dataTranslations';
+
+export { useLang } from './langContext';
 
 const LANGUAGE_KEY = 'fitfood:lang';
 const languages: Language[] = ['zh-Hant', 'en'];
@@ -27,20 +30,7 @@ function initialLanguage(): Language {
   return 'en';
 }
 
-interface LanguageValue {
-  lang: Language;
-  setLang: (language: Language) => void;
-  t: (key: string, values?: Record<string, string | number>) => string;
-  tDish: (dish: Pick<Dish, 'id' | 'name'>) => string;
-  tIngredient: (ingredient: Pick<Ingredient, 'id' | 'name'>) => string;
-  tCardio: (plan: CardioPlan) => CardioPlan;
-  tExercise: (name: string) => string;
-  formatDate: (date: Date, options?: Intl.DateTimeFormatOptions) => string;
-}
-
-const LanguageContext = createContext<LanguageValue | null>(null);
-
-export function LanguageProvider({ children }: { children: ReactNode }) {
+function LanguageProviderContent({ children }: { children: ReactNode }) {
   const [lang, updateLanguage] = useState<Language>(initialLanguage);
 
   const setLang = useCallback((language: Language) => {
@@ -91,10 +81,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
-export function useLang(): LanguageValue {
-  const context = useContext(LanguageContext);
-  if (!context) throw new Error('useLang must be used within LanguageProvider');
-  return context;
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  return <ErrorBoundary><LanguageProviderContent>{children}</LanguageProviderContent></ErrorBoundary>;
 }
 
 export function LanguageButton({ accent, SheetComponent }: { accent: 'food' | 'fit'; SheetComponent: typeof Sheet }) {

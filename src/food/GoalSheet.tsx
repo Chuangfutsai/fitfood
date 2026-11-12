@@ -1,8 +1,12 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import type { AppData, Profile } from '../types';
 import { Sheet } from '../ui/Sheet';
 import { useLang } from '../i18n/LanguageContext';
 import { getDailyTargets, getLocalDateKey } from '../stats';
+import { exportBackup, getBackupFilename, parseBackup } from '../backup';
+import type { BackupEnvelope } from '../backup';
+import { deliverBackupFile } from '../ui/ErrorBoundary';
 
 interface GoalSheetProps {
   open: boolean;
@@ -16,13 +20,75 @@ const measurements = ['age', 'heightCm', 'weightKg'] as const;
 type Measurement = typeof measurements[number];
 
 export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
-  const { t } = useLang();
+  const { t, formatDate } = useLang();
   const fieldId = useId();
   const [sex, setSex] = useState<Profile['sex']>('male');
   const [values, setValues] = useState<Record<Measurement, string>>({ age: '', heightCm: '', weightKg: '' });
   const [activity, setActivity] = useState<Profile['activity']>(1.2);
   const [deficit, setDeficit] = useState<Profile['deficit']>(0.2);
   const [touched, setTouched] = useState<Partial<Record<Measurement, boolean>>>({});
+  const [backupPreview, setBackupPreview] = useState<BackupEnvelope | null>(null);
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [backupMessage, setBackupMessage] = useState<string | null>(null);
+  const [undoData, setUndoData] = useState<AppData | null>(null);
+  const [readingBackup, setReadingBackup] = useState(false);
+  const readRequest = useRef(0);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!undoData) return;
+    const timer = setTimeout(() => setUndoData(null), 5000);
+    return () => clearTimeout(timer);
+  }, [undoData]);
+
+  const readBackup = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    const request = ++readRequest.current;
+    setReadingBackup(true);
+    setBackupPreview(null);
+    setBackupError(null);
+    setBackupMessage(null);
+    try {
+      const result = parseBackup(await file.text());
+      if (request !== readRequest.current) return;
+      if (result.ok) setBackupPreview(result.backup);
+      else setBackupError(`backup.error.${result.error}`);
+    } catch {
+      if (request === readRequest.current) setBackupError('backup.error.read');
+    } finally {
+      if (request === readRequest.current) setReadingBackup(false);
+    }
+  };
+
+  const restoreBackup = () => {
+    if (!backupPreview) return;
+    try {
+      // Save the current snapshot before replacing it; never write inside a state updater.
+      localStorage.setItem('fitfood:v1:before-restore', JSON.stringify(data));
+    } catch {
+      setBackupError('backup.error.save');
+      return;
+    }
+    const restored = backupPreview.data;
+    setUndoData(data);
+    setData(() => restored);
+    setBackupPreview(null);
+    setBackupError(null);
+    setBackupMessage('backup.restored');
+  };
+
+  const downloadBackup = async () => {
+    setBackupError(null);
+    try {
+      if (await deliverBackupFile(JSON.stringify(exportBackup(data), null, 2), getBackupFilename())) {
+        setBackupMessage('backup.exported');
+      }
+    } catch {
+      setBackupError('backup.error.export');
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -135,6 +201,38 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
           {t('goals.save')}
         </button>
       </form>
+      <section className="mt-6 space-y-3 border-t border-line pt-5">
+        <h3 className="text-lg font-bold text-text">{t('backup.title')}</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={downloadBackup} className="min-h-11 min-w-0 rounded-[14px] border border-line bg-surface px-3 text-sm font-semibold text-food">{t('backup.export')}</button>
+          <button type="button" onClick={() => fileInput.current?.click()} className="min-h-11 min-w-0 rounded-[14px] border border-line bg-surface px-3 text-sm font-semibold text-food">{t('backup.restore')}</button>
+        </div>
+        <input ref={fileInput} type="file" accept=".json,application/json" aria-label={t('backup.restore')} onChange={readBackup} className="hidden" />
+        {readingBackup && <p role="status" className="text-sm text-muted">{t('backup.reading')}</p>}
+        {backupError && <p role="alert" className="break-words text-sm leading-6 text-tomato-ink">{t(backupError)}</p>}
+        {backupPreview && (
+          <div className="space-y-3 rounded-[16px] bg-surface-2 p-4 text-sm text-text">
+            <h4 className="font-bold">{t('backup.preview')}</h4>
+            <ul className="space-y-1">
+              <li>{t('backup.mealDays', { count: Object.keys(backupPreview.data.mealLog).length })}</li>
+              <li>{t('backup.workoutDays', { count: Object.keys(backupPreview.data.weeklyLog).length })}</li>
+              <li>{t(backupPreview.data.profile ? 'backup.hasGoals' : 'backup.noGoals')}</li>
+              <li className="break-words">{t('backup.exportedAt', { date: formatDate(new Date(backupPreview.exportedAt), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) })}</li>
+            </ul>
+            <p className="text-xs leading-5 text-muted">{t('backup.replaceWarning')}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setBackupPreview(null)} className="min-h-11 rounded-[12px] border border-line bg-surface px-2 font-semibold">{t('backup.cancel')}</button>
+              <button type="button" onClick={restoreBackup} className="min-h-11 rounded-[12px] bg-food px-2 font-semibold text-white">{t('backup.confirm')}</button>
+            </div>
+          </div>
+        )}
+        {(backupMessage || undoData) && (
+          <div role="status" className="flex min-h-11 items-center justify-between gap-3 rounded-[14px] bg-food/10 px-3 text-sm text-food">
+            <span>{t(undoData ? 'backup.restored' : backupMessage!)}</span>
+            {undoData && <button type="button" className="min-h-11 shrink-0 font-bold" onClick={() => { const previous = undoData; setData(() => previous); setUndoData(null); setBackupMessage('backup.undone'); }}>{t('backup.undo')}</button>}
+          </div>
+        )}
+      </section>
     </Sheet>
   );
 }

@@ -17,4 +17,5 @@ export interface Profile {
   activity: 1.2 | 1.375 | 1.55 | 1.725 | 1.9;
   deficit: 0.15 | 0.2;
 }
-export interface AppData { version: 1; ingredients: Ingredient[]; dishes: Dish[]; cardioPlans: CardioPlan[]; strengthPlans: StrengthPlan[]; lastStrengthFocus: StrengthFocus | null; weeklyPlan: WeeklyDay[]; weeklyLog: Record<string, boolean>; mealLog: Record<string, MealEntry[]>; profile: Profile | null; weightLog: Record<string, number>; }
+export interface KnownDefaultIds { ingredients: string[]; dishes: string[]; cardioPlans: string[]; }
+export interface AppData { version: 2; knownDefaultIds: KnownDefaultIds; ingredients: Ingredient[]; dishes: Dish[]; cardioPlans: CardioPlan[]; strengthPlans: StrengthPlan[]; lastStrengthFocus: StrengthFocus | null; weeklyPlan: WeeklyDay[]; weeklyLog: Record<string, boolean>; mealLog: Record<string, MealEntry[]>; profile: Profile | null; weightLog: Record<string, number>; }
