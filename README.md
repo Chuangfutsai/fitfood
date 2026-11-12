@@ -4,37 +4,37 @@
 
 # FitFood
 
-**今天吃什麼？今天練什麼？一個為減脂而生的 App。**
-*What to cook, how to train — one app built for fat loss.*
+**What should I cook today? How should I train today?**
+*One app built for fat loss — from your fridge to the gym.*
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite_8-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
 ![Vitest](https://img.shields.io/badge/tests-54_passing-22C55E?style=flat-square&logo=vitest&logoColor=white)
-![i18n](https://img.shields.io/badge/i18n-繁中_|_EN-F97316?style=flat-square)
+![i18n](https://img.shields.io/badge/i18n-EN_|_Traditional_Chinese-F97316?style=flat-square)
 
 </div>
 
 ---
 
-## ✨ 功能 Features
+## ✨ Features
 
-### 🥗 吃 Food
-- **食材轉盤**：依冰箱裡現有的食材，轉出今天能做的菜
-- **55 道家常減脂料理**：每道都有完整份量、調味、步驟、熱量與蛋白質
-- **今日餐點紀錄**：一鍵記錄、5 秒復原、熱量與蛋白質自動加總
-- **食材庫存**：只勾有的，轉盤只出現做得出來的菜
+### 🥗 Food
+- **Pantry-based recipe wheel** — spin to pick a dish you can actually cook with what's in your fridge
+- **55 home-style, fat-loss recipes** — exact amounts, seasonings, step-by-step instructions, calories and protein
+- **Daily meal log** — one-tap logging, 5-second undo, automatic calorie and protein totals
+- **Pantry tracking** — toggle what you have; the wheel only shows dishes you can make
 
-### 🏃 練 Fitness
-- **8 種有氧器材 × 24 套減脂課表**：跑步機、爬樓機、橢圓機、飛輪、臥式車、划船機、風扇車、滑雪機
-- **每週訓練課表**：以減脂為主、有氧優先，搭配推／拉／腿重訓
-- **打卡與連續天數**
+### 🏃 Fitness
+- **8 cardio machines × 24 fat-loss plans** — treadmill, stair climber, elliptical, spin bike, recumbent bike, rower, air bike, SkiErg
+- **Weekly training schedule** — cardio-first for fat loss, paired with push / pull / legs strength days
+- **Workout check-in & streaks**
 
-### 🌐 其他
-- 繁體中文／English 全內容切換（含食譜與課表）
-- 資料只存在裝置本機，不上傳任何伺服器
-- 可安裝為 PWA
+### 🌐 More
+- Full English / Traditional Chinese support, including every recipe and workout plan
+- Privacy first — all data stays on your device, nothing is uploaded
+- Installable as a PWA
 
 ---
 
@@ -59,20 +59,20 @@
 
 ## 🗺️ Roadmap
 
-| 階段 | 內容 | 狀態 |
+| Phase | Scope | Status |
 |---|---|---|
-| A1 | 打卡、餐點紀錄、復原、資料驗證、單元測試 | ✅ |
-| A3 | 8 種有氧器材、24 套課表 | ✅ |
-| M1 + T2 | 早午晚餐分類、早餐菜、目標設定、每日熱量指示器 | 🔄 |
-| T1 + T5 | 工程地基、資料匯出／匯入 | ⬜ |
-| T3 | 本週菜單＋自動購物清單 | ⬜ |
-| T4 | 重訓即時紀錄（重量、次數、休息計時） | ⬜ |
-| T6 | 「今天」儀表板首頁 | ⬜ |
-| T7 | App Store 上架 | ⬜ |
+| A1 | Check-in, meal log, undo, data validation, unit tests | ✅ |
+| A3 | 8 cardio machines, 24 workout plans | ✅ |
+| M1 + T2 | Breakfast / lunch / dinner, breakfast recipes, goal setup, daily calorie indicator | 🔄 |
+| T1 + T5 | Engineering foundation, data export / import | ⬜ |
+| T3 | Weekly meal plan + auto shopping list | ⬜ |
+| T4 | Live strength logging (weight, reps, rest timer) | ⬜ |
+| T6 | "Today" dashboard home screen | ⬜ |
+| T7 | App Store release | ⬜ |
 
 ---
 
-## 🛠️ 開發 Development
+## 🛠️ Development
 
 ```bash
 npm install
@@ -81,7 +81,7 @@ npm test        # unit tests
 npm run build   # production build
 ```
 
-**Stack**：React 19 · TypeScript · Vite 8 · Tailwind CSS 4 · Framer Motion · Lucide · Vitest · vite-plugin-pwa
+**Stack:** React 19 · TypeScript · Vite 8 · Tailwind CSS 4 · Framer Motion · Lucide · Vitest · vite-plugin-pwa
 
 <div align="center">
 <sub>Made with 🥦 and 🏋️ in the Bay Area</sub>
