@@ -29,7 +29,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto  max-h-[85dvh] overflow-y-auto rounded-t-[28px] border-x border-t border-line bg-surface/85 px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+20px)] backdrop-blur-xl"
+            className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[480px] max-h-[85dvh] overflow-y-auto  max-h-[85dvh] overflow-y-auto rounded-t-[28px] border-x border-t border-line bg-surface/85 px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+20px)] backdrop-blur-xl"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}

@@ -123,7 +123,7 @@ export function PantryList({ data, setData }: PantryListProps) {
                         onClick={() => toggleIngredient(ingredient.id)}
                       >
                         <span
-                          className={`absolute top-1 h-5 w-5 rounded-full bg-surface shadow-[0_2px_6px_rgba(15,23,42,0.12)] transition-transform ${
+                          className={`absolute left-0 top-1 h-5 w-5 rounded-full bg-surface shadow-[0_2px_6px_rgba(15,23,42,0.12)] transition-transform ${
                             ingredient.inStock
                               ? 'translate-x-6'
                               : 'translate-x-1'

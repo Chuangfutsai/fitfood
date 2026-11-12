@@ -1,13 +1,19 @@
 import { useMemo, useState } from 'react';
 import {
+  BookOpen,
   Clock,
+  Lightbulb,
   Search,
+  TvMinimal,
   UtensilsCrossed,
+  CirclePlay,
 } from 'lucide-react';
 import type { AppData, Dish, IngredientCategory } from '../types';
 import { Card } from '../ui/Card';
 import { Sheet } from '../ui/Sheet';
 import { useLang } from '../i18n/LanguageContext';
+import { recipeTranslations } from '../i18n/dataTranslations';
+import { recipes } from './recipes';
 
 interface DishListProps {
   data: AppData;
@@ -54,7 +60,7 @@ function DishImage({ dish, className }: DishImageProps) {
 }
 
 export function DishList({ data, setData }: DishListProps) {
-  const { t, tDish, tIngredient } = useLang();
+  const { lang, t, tDish, tIngredient } = useLang();
   const [query, setQuery] = useState('');
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -191,40 +197,139 @@ export function DishList({ data, setData }: DishListProps) {
         onClose={() => setSelectedDish(null)}
         title={selectedDish ? tDish(selectedDish) : t('dishes.details')}
       >
-        {selectedDish && (
+        {selectedDish && (() => {
+          const sourceRecipe = recipes[selectedDish.id];
+          const recipe = lang === 'en'
+            ? recipeTranslations[selectedDish.id] ?? sourceRecipe
+            : sourceRecipe;
+          const tutorials = [
+            { key: 'youtube', Icon: CirclePlay, href: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(t('recipe.searchMethod', { name: tDish(selectedDish) })) },
+            { key: 'bilibili', Icon: TvMinimal, href: 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(t('recipe.chineseMethod', { name: selectedDish.name })) },
+            { key: 'icook', Icon: BookOpen, href: 'https://icook.tw/search/' + encodeURIComponent(selectedDish.name) + '/' },
+            { key: 'google', Icon: Search, href: 'https://www.google.com/search?q=' + encodeURIComponent(t('recipe.searchRecipe', { name: tDish(selectedDish) })) },
+          ];
+
+          return (
           <div className="space-y-5">
             <DishImage
               dish={selectedDish}
               className="aspect-square w-full rounded-[20px]"
             />
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-text">
+              <h3 className="break-words text-[24px] font-bold text-text">
                 {tDish(selectedDish)}
               </h3>
-              <p className="flex items-center gap-1 text-sm text-muted">
+              <p className="flex flex-wrap items-center gap-1 text-sm text-muted">
                 <Clock size={16} />
                 {t('unit.minutes', { count: selectedDish.minutes })}
+                {recipe && <span className="ml-2">{t('recipe.servings', { count: recipe.servings })}</span>}
               </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {selectedDish.ingredientIds.map((ingredientId) => {
-                const ingredient = ingredientsById.get(ingredientId);
-                const inStock = ingredient?.inStock === true;
-
-                return (
-                  <span
-                    key={ingredientId}
-                    className={`max-w-full truncate rounded-full px-3 py-2 text-sm ${
-                      inStock
-                        ? 'bg-food/10 text-food'
-                        : 'bg-surface-2 text-muted line-through'
-                    }`}
-                  >
-                    {ingredient ? tIngredient(ingredient) : t('dishes.deletedIngredient')}
+              {recipe && (
+                <div className="flex flex-wrap gap-2">
+                  <span className="max-w-full rounded-full bg-food/10 px-3 py-1 text-xs text-food tabular-nums">
+                    {t('recipe.energy', { count: recipe.kcal })}
                   </span>
-                );
-              })}
+                  <span className="max-w-full rounded-full bg-food/10 px-3 py-1 text-xs text-food tabular-nums">
+                    {t('recipe.protein', { count: recipe.proteinG })}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {recipe ? (
+              <>
+                <section className="space-y-2">
+                  <h4 className="text-[17px] font-bold text-text">{t('recipe.ingredients')}</h4>
+                  <ul className="divide-y divide-line">
+                    {recipe.ingredients.map((item, index) => {
+                      const originalName = sourceRecipe?.ingredients[index]?.name ?? item.name;
+                      const stockedIngredient = data.ingredients.find((ingredient) => ingredient.name === originalName);
+                      const missing = stockedIngredient?.inStock !== true;
+
+                      return (
+                        <li key={originalName} className="grid grid-cols-2 gap-3 py-2 text-sm leading-6">
+                          <span className={missing ? 'min-w-0 break-words text-muted line-through' : 'min-w-0 break-words text-text'}>
+                            {item.name}
+                          </span>
+                          <span className="min-w-0 break-words text-right text-muted">{item.amount}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+
+                <section className="space-y-2">
+                  <h4 className="text-[17px] font-bold text-text">{t('recipe.seasonings')}</h4>
+                  <ul className="divide-y divide-line">
+                    {recipe.seasonings.map((item) => (
+                      <li key={item.name} className="grid grid-cols-2 gap-3 py-2 text-sm leading-6">
+                        <span className="min-w-0 break-words text-text">{item.name}</span>
+                        <span className="min-w-0 break-words text-right text-muted">{item.amount}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="text-[17px] font-bold text-text">{t('recipe.steps')}</h4>
+                  <ol className="space-y-4">
+                    {recipe.steps.map((step, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-food text-sm font-bold text-white tabular-nums">
+                          {index + 1}
+                        </span>
+                        <p className="min-w-0 flex-1 break-words text-[15px] leading-7 text-text">{step}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+
+                <section className="flex items-start gap-3 rounded-[20px] bg-food/10 p-4">
+                  <Lightbulb size={22} className="shrink-0 text-food" aria-hidden="true" />
+                  <div className="min-w-0 space-y-1">
+                    <h4 className="text-sm font-bold text-food">{t('recipe.tip')}</h4>
+                    <p className="break-words text-sm leading-6 text-text">{recipe.tip}</p>
+                  </div>
+                </section>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {selectedDish.ingredientIds.map((ingredientId) => {
+                    const ingredient = data.ingredients.find((item) => item.id === ingredientId);
+                    const inStock = ingredient?.inStock === true;
+
+                    return (
+                      <span
+                        key={ingredientId}
+                        className={'max-w-full truncate rounded-full px-3 py-2 text-sm ' + (inStock ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted line-through')}
+                      >
+                        {ingredient ? tIngredient(ingredient) : t('dishes.deletedIngredient')}
+                      </span>
+                    );
+                  })}
+                </div>
+                <p className="text-sm text-muted">{t('recipe.missing')}</p>
+              </div>
+            )}
+
+            <section className="space-y-3">
+              <h4 className="text-[17px] font-bold text-text">{t('recipe.tutorials')}</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {tutorials.map(({ key, Icon, href }) => (
+                  <a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-h-11 min-w-0 items-center gap-2 rounded-[14px] border border-line bg-surface px-3 py-2 text-sm font-medium text-text transition-transform active:scale-[0.97]"
+                  >
+                    <Icon size={18} className="shrink-0 text-food" aria-hidden="true" />
+                    <span className="min-w-0 truncate">{t('recipe.' + key)}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
             <button
               type="button"
               className="h-11 text-sm font-medium text-muted underline transition-transform active:scale-[0.97]"
@@ -233,7 +338,8 @@ export function DishList({ data, setData }: DishListProps) {
               {t('dishes.delete')}
             </button>
           </div>
-        )}
+          );
+        })()}
       </Sheet>
 
       <Sheet
