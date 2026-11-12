@@ -11,7 +11,7 @@ import { LanguageButton, useLang } from '../i18n/LanguageContext';
 
 interface FitnessPageProps {
   data: AppData;
-  setData: (data: AppData) => void;
+  setData: (next: AppData | ((previous: AppData) => AppData)) => void;
 }
 
 const fitnessTabs = [

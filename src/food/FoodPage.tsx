@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   BookOpen,
   Carrot,
+  Check,
   Clock,
   Egg,
   Lightbulb,
@@ -23,10 +24,14 @@ import { Wheel } from './Wheel';
 import { LanguageButton, useLang } from '../i18n/LanguageContext';
 import { recipeTranslations } from '../i18n/dataTranslations';
 import { recipes } from './recipes';
+import { getAvailableDishes, getLocalDateKey } from '../stats';
+import { createMealId } from '../storage';
+import { TodayMeals } from './TodayMeals';
+import type { MealNotice } from './TodayMeals';
 
 interface FoodPageProps {
   data: AppData;
-  setData: (data: AppData) => void;
+  setData: (next: AppData | ((previous: AppData) => AppData)) => void;
 }
 
 interface DishImageProps {
@@ -162,6 +167,15 @@ export function FoodPage({ data, setData }: FoodPageProps) {
   const [shuffleKey, setShuffleKey] = useState(0);
   const [resultDishId, setResultDishId] = useState<string | null>(null);
   const [comboResult, setComboResult] = useState<ComboResult | null>(null);
+  const [mealNotice, setMealNotice] = useState<MealNotice | null>(null);
+  const [acceptedMealId, setAcceptedMealId] = useState<string | null>(null);
+  const mealAcceptedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!mealNotice) return;
+    const timer = setTimeout(() => setMealNotice(null), 5000);
+    return () => clearTimeout(timer);
+  }, [mealNotice]);
 
   useEffect(() => {
     if (activeTab === 'wheel') {
@@ -170,17 +184,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
   }, [activeTab]);
 
   const availableDishes = useMemo(
-    () =>
-      data.dishes.filter(
-        (dish) =>
-          dish.ingredientIds.length > 0 &&
-          dish.ingredientIds.every((ingredientId) =>
-            data.ingredients.some(
-              (ingredient) =>
-                ingredient.id === ingredientId && ingredient.inStock,
-            ),
-          ),
-      ),
+    () => getAvailableDishes(data),
     [data.dishes, data.ingredients],
   );
 
@@ -192,6 +196,47 @@ export function FoodPage({ data, setData }: FoodPageProps) {
 
   const resultDish =
     data.dishes.find((dish) => dish.id === resultDishId) ?? null;
+
+  const recordMeal = () => {
+    if (!resultDish || mealAcceptedRef.current) return;
+    const at = Date.now();
+    const dateKey = getLocalDateKey(new Date(at));
+    const recipe = recipes[resultDish.id];
+    const entry = {
+      id: createMealId(),
+      dishId: resultDish.id,
+      at,
+      kcal: recipe?.kcal ?? 0,
+      proteinG: recipe?.proteinG ?? 0,
+    };
+    // Lock synchronously before React renders so rapid taps record only once.
+    mealAcceptedRef.current = entry.id;
+    setAcceptedMealId(entry.id);
+
+    setData((previous) => ({
+      ...previous,
+      mealLog: {
+        ...previous.mealLog,
+        [dateKey]: [...(previous.mealLog[dateKey] ?? []), entry],
+      },
+    }));
+    setMealNotice({
+      messageKey: 'food.mealRecorded',
+      undo: () => {
+        setData((previous) => {
+          const mealLog = { ...previous.mealLog };
+          const entries = (mealLog[dateKey] ?? []).filter((meal) => meal.id !== entry.id);
+          if (entries.length > 0) mealLog[dateKey] = entries;
+          else delete mealLog[dateKey];
+          return { ...previous, mealLog };
+        });
+        if (mealAcceptedRef.current === entry.id) {
+          mealAcceptedRef.current = null;
+          setAcceptedMealId(null);
+        }
+      },
+    });
+  };
 
   const shuffleWheel = () => {
     setShuffleKey((currentKey) => currentKey + 1);
@@ -266,6 +311,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
 
           {wheelMode === 'dish' && (
             <>
+              <TodayMeals data={data} setData={setData} onNotice={setMealNotice} />
               {wheelDishes.length >= 2 ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
@@ -286,7 +332,11 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                       id: dish.id,
                       label: tDish(dish),
                     }))}
-                    onResult={setResultDishId}
+                    onResult={(id) => {
+                      mealAcceptedRef.current = null;
+                      setAcceptedMealId(null);
+                      setResultDishId(id);
+                    }}
                   />
                 </div>
               ) : (
@@ -498,16 +548,43 @@ export function FoodPage({ data, setData }: FoodPageProps) {
               </button>
               <button
                 type="button"
-                className="h-12 min-w-0 truncate rounded-[14px] bg-food px-2 text-sm font-semibold text-white transition-transform active:scale-[0.97]"
-                onClick={() => setResultDishId(null)}
+                className={`flex h-12 min-w-0 items-center justify-center gap-1 rounded-[14px] px-2 text-sm font-semibold text-white transition-transform active:scale-[0.97] ${acceptedMealId ? 'bg-ok' : 'bg-food'}`}
+                onClick={recordMeal}
+                disabled={acceptedMealId !== null}
               >
-                {t('food.result.accept')}
+                {acceptedMealId && <Check size={18} className="shrink-0" aria-hidden="true" />}
+                <span className="truncate">{t(acceptedMealId ? 'food.result.added' : 'food.result.accept')}</span>
               </button>
             </div>
           </div>
           );
         })()}
       </Sheet>
+      <AnimatePresence>
+        {mealNotice && (
+          <motion.div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none fixed inset-x-5 bottom-[calc(env(safe-area-inset-bottom)+80px)] z-[70] mx-auto flex max-w-[440px] items-center justify-between gap-3 rounded-[14px] border border-line bg-surface px-4 py-2 text-sm font-medium text-text shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.18 }}
+          >
+            <span className="min-w-0">{t(mealNotice.messageKey)}</span>
+            <button
+              type="button"
+              className="pointer-events-auto min-h-11 min-w-11 shrink-0 text-food transition-transform active:scale-[0.97]"
+              onClick={() => {
+                mealNotice.undo();
+                setMealNotice(null);
+              }}
+            >
+              {t('food.meals.undo')}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Flame } from 'lucide-react';
 import type { AppData, StrengthFocus } from '../types';
 import { Card } from '../ui/Card';
 import { useLang } from '../i18n/LanguageContext';
+import { getLocalDateKey, getStreak } from '../stats';
 
 interface WeeklyPanelProps {
   data: AppData;
-  setData: (data: AppData) => void;
+  setData: (next: AppData | ((previous: AppData) => AppData)) => void;
 }
 
 const strengthLabels: Record<StrengthFocus, string> = {
@@ -16,14 +17,6 @@ const strengthLabels: Record<StrengthFocus, string> = {
   legs: 'weekly.strength.legs',
   full: 'weekly.strength.full',
 };
-
-function getLocalDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
 
 export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
   const { lang, t, tCardio, tExercise, formatDate } = useLang();
@@ -85,14 +78,14 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
   ).length;
   const progress =
     trainingDays.length === 0 ? 0 : (completedDays / trainingDays.length) * 100;
+  const streak = getStreak(data, today);
 
   const toggleCompleted = (dateKey: string) => {
-    setData({
-      ...data,
-      weeklyLog: {
-        ...data.weeklyLog,
-        [dateKey]: data.weeklyLog[dateKey] !== true,
-      },
+    setData((previous) => {
+      const weeklyLog = { ...previous.weeklyLog };
+      if (weeklyLog[dateKey] === true) delete weeklyLog[dateKey];
+      else weeklyLog[dateKey] = true;
+      return { ...previous, weeklyLog };
     });
   };
 
@@ -124,6 +117,11 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
           </div>
         </div>
       </Card>
+
+      <p className="flex items-center gap-2 text-sm font-semibold text-fit tabular-nums">
+        <Flame size={18} aria-hidden="true" className="shrink-0" />
+        {streak === 0 ? t('weekly.streakStart') : t('weekly.streak', { count: streak })}
+      </p>
 
       <div className="space-y-2">
         {week.map((day) => {
