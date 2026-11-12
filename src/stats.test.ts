@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { AppData, MealEntry, WeeklyDay } from './types';
-import { getLocalDateKey, getStreak, getTodayNutrition } from './stats';
+import type { AppData, MealEntry, Profile, WeeklyDay } from './types';
+import { getBMR, getCalorieStatus, getDailyTargets, getLocalDateKey, getMealForTime, getStreak, getTodayNutrition } from './stats';
 
 function makeData(overrides: Partial<AppData> = {}): AppData {
   const weeklyPlan: WeeklyDay[] = ([0, 1, 2, 3, 4, 5, 6] as const).map((weekday) => ({
@@ -19,6 +19,8 @@ function makeData(overrides: Partial<AppData> = {}): AppData {
     weeklyPlan,
     weeklyLog: {},
     mealLog: {},
+    profile: null,
+    weightLog: {},
     ...overrides,
   };
 }
@@ -33,6 +35,75 @@ beforeAll(() => {
 
 afterAll(() => {
   vi.unstubAllEnvs();
+});
+
+describe('getMealForTime', () => {
+  it.each([
+    [10, 29, 'breakfast'],
+    [10, 30, 'lunch'],
+    [15, 59, 'lunch'],
+    [16, 0, 'dinner'],
+  ] as const)('classifies local time %i:%i as %s', (hour, minute, meal) => {
+    expect(getMealForTime(new Date(2026, 10, 12, hour, minute))).toBe(meal);
+  });
+
+  it('uses the local clock when the UTC date is already tomorrow', () => {
+    expect(getMealForTime(new Date('2026-11-13T07:30:00.000Z'))).toBe('dinner');
+  });
+});
+
+const baseProfile: Profile = {
+  sex: 'male',
+  age: 30,
+  heightCm: 180,
+  weightKg: 80,
+  activity: 1.55,
+  deficit: 0.2,
+};
+
+describe('getBMR', () => {
+  it.each([
+    { sex: 'male', age: 30, heightCm: 180, weightKg: 80, expected: 1780 },
+    { sex: 'male', age: 45, heightCm: 175, weightKg: 70, expected: 1573.75 },
+    { sex: 'female', age: 30, heightCm: 165, weightKg: 60, expected: 1320.25 },
+    { sex: 'female', age: 50, heightCm: 170, weightKg: 90, expected: 1551.5 },
+  ] as const)('calculates $sex BMR at $age years, $heightCm cm, $weightKg kg', ({ expected, ...profile }) => {
+    expect(getBMR({ ...baseProfile, ...profile })).toBe(expected);
+  });
+});
+
+describe('getDailyTargets', () => {
+  it('applies activity and the standard deficit before rounding calories', () => {
+    expect(getDailyTargets(baseProfile)).toEqual({ bmr: 1780, kcal: 2207, proteinG: 128 });
+  });
+
+  it('supports the gentle deficit and rounds protein to whole grams', () => {
+    const targets = getDailyTargets({ ...baseProfile, weightKg: 70.4, deficit: 0.15 });
+    expect(targets).toEqual({ bmr: 1684, kcal: 2219, proteinG: 113 });
+  });
+
+  it.each([
+    ['male', 1500],
+    ['female', 1200],
+  ] as const)('applies the %s calorie floor of %i', (sex, kcal) => {
+    const profile: Profile = { ...baseProfile, sex, age: 80, heightCm: 120, weightKg: 35, activity: 1.2 };
+    expect(getDailyTargets(profile).kcal).toBe(kcal);
+  });
+});
+
+describe('getCalorieStatus', () => {
+  it.each([
+    [89, 'food'],
+    [90, 'fit'],
+    [100, 'fit'],
+    [101, 'tomato'],
+  ] as const)('uses %s percent to select %s', (percent, status) => {
+    expect(getCalorieStatus(percent * 20, 2000)).toBe(status);
+  });
+
+  it('turns red immediately above the target rather than rounding the percentage down', () => {
+    expect(getCalorieStatus(2000.1, 2000)).toBe('tomato');
+  });
 });
 
 describe('getStreak', () => {
@@ -106,6 +177,7 @@ describe('getTodayNutrition', () => {
     at: new Date(2026, 10, 12, 12, 30).getTime(),
     kcal: 123,
     proteinG: 17,
+    meal: 'lunch',
   };
 
   it('sums snapshots including repeated meals and deleted dishes without consulting recipes', () => {

@@ -10,11 +10,12 @@ import {
   Salad,
   Search,
   Shuffle,
+  Target,
   TvMinimal,
   UtensilsCrossed,
   CirclePlay,
 } from 'lucide-react';
-import type { AppData } from '../types';
+import type { AppData, Meal } from '../types';
 import { Card } from '../ui/Card';
 import { SegmentedTabs } from '../ui/SegmentedTabs';
 import { Sheet } from '../ui/Sheet';
@@ -24,10 +25,11 @@ import { Wheel } from './Wheel';
 import { LanguageButton, useLang } from '../i18n/LanguageContext';
 import { recipeTranslations } from '../i18n/dataTranslations';
 import { recipes } from './recipes';
-import { getAvailableDishes, getLocalDateKey } from '../stats';
+import { getAvailableDishes, getLocalDateKey, getMealForTime } from '../stats';
 import { createMealId } from '../storage';
 import { TodayMeals } from './TodayMeals';
 import type { MealNotice } from './TodayMeals';
+import { GoalSheet } from './GoalSheet';
 
 interface FoodPageProps {
   data: AppData;
@@ -69,7 +71,7 @@ function DishImage({ id, name, className }: DishImageProps) {
   );
 }
 
-function HeroCard({ count }: { count: number }) {
+function HeroCard({ count, onOpenGoals }: { count: number; onOpenGoals: () => void }) {
   const { lang, t, formatDate } = useLang();
   const [hasError, setHasError] = useState(false);
   const now = new Date();
@@ -83,11 +85,22 @@ function HeroCard({ count }: { count: number }) {
         : hour >= 14 && hour < 18
           ? t('greeting.afternoon')
           : t('greeting.evening');
+  const goalButton = (
+    <button
+      type="button"
+      aria-label={t('goals.open')}
+      onClick={onOpenGoals}
+      className="absolute right-[64px] top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-surface/90 text-food"
+    >
+      <Target size={20} aria-hidden="true" />
+    </button>
+  );
 
   if (hasError) {
     return (
       <section className="relative isolate h-[200px] w-full overflow-hidden rounded-[24px] bg-food/10">
         <LanguageButton accent="food" SheetComponent={Sheet} />
+        {goalButton}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <motion.div
             className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-tomato"
@@ -112,7 +125,7 @@ function HeroCard({ count }: { count: number }) {
           </motion.div>
         </div>
 
-        <div className="absolute left-5 top-5 z-10 max-w-[calc(100%-88px)]">
+        <div className="absolute left-5 top-5 z-10 max-w-[calc(100%-128px)]">
           <p className="text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
           <p className="mt-2 truncate text-sm leading-5 text-text">
             {t('food.hero.greeting', { greeting })}
@@ -135,6 +148,7 @@ function HeroCard({ count }: { count: number }) {
   return (
     <section className="relative h-[200px] overflow-hidden rounded-[24px]">
       <LanguageButton accent="food" SheetComponent={Sheet} />
+      {goalButton}
       <img
         src="/dishes/hero.jpg"
         alt={t('food.hero.alt')}
@@ -155,6 +169,8 @@ function HeroCard({ count }: { count: number }) {
 export function FoodPage({ data, setData }: FoodPageProps) {
   const { lang, t, tDish, tIngredient } = useLang();
   const [activeTab, setActiveTab] = useState('wheel');
+  const [meal, setMeal] = useState<Meal>(() => getMealForTime(new Date()));
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const [shuffleKey, setShuffleKey] = useState(0);
   const [wheelBusy, setWheelBusy] = useState(false);
   const [resultDishId, setResultDishId] = useState<string | null>(null);
@@ -175,8 +191,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
   }, [activeTab]);
 
   const availableDishes = useMemo(
-    () => getAvailableDishes(data),
-    [data.dishes, data.ingredients],
+    () => getAvailableDishes(data).filter((dish) => dish.meals.includes(meal)),
+    [data.dishes, data.ingredients, meal],
   );
   const [stockHintBefore, stockHintAfter] = t(
     availableDishes.length === 1 ? 'food.wheel.stockHintOne' : 'food.wheel.stockHint',
@@ -207,6 +223,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
       id: createMealId(),
       dishId: resultDish.id,
       at,
+      meal,
       kcal: recipe?.kcal ?? 0,
       proteinG: recipe?.proteinG ?? 0,
     };
@@ -245,7 +262,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
 
   return (
     <main className="space-y-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)]">
-      <HeroCard count={availableDishes.length} />
+      <HeroCard count={availableDishes.length} onOpenGoals={() => setGoalsOpen(true)} />
 
       <SegmentedTabs
         options={foodTabs.map((tab) => ({ ...tab, label: t(tab.label) }))}
@@ -262,7 +279,15 @@ export function FoodPage({ data, setData }: FoodPageProps) {
 
       {activeTab === 'wheel' && (
         <section className="space-y-4">
-          <TodayMeals data={data} setData={setData} onNotice={setMealNotice} />
+          <div className={wheelBusy ? 'pointer-events-none opacity-60' : undefined} aria-disabled={wheelBusy}>
+            <SegmentedTabs
+              options={(['breakfast', 'lunch', 'dinner'] as const).map((value) => ({ value, label: t(`meal.${value}`) }))}
+              value={meal}
+              onChange={(value) => { if (!wheelBusy) setMeal(value as Meal); }}
+              accent="food"
+            />
+          </div>
+          <TodayMeals data={data} setData={setData} onNotice={setMealNotice} onOpenGoals={() => setGoalsOpen(true)} />
           <div className="space-y-2">
             {availableDishes.length >= 9 ? (
               <div className="flex items-center justify-between gap-3">
@@ -345,6 +370,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
         </section>
       )}
 
+      <GoalSheet open={goalsOpen} onClose={() => setGoalsOpen(false)} data={data} setData={setData} />
       <Sheet
         open={resultDish !== null}
         onClose={() => setResultDishId(null)}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { AppData, CardioPlan, MealEntry } from './types';
+import type { AppData, CardioPlan, Dish, Meal, MealEntry, Profile } from './types';
+import { getMealForTime } from './stats';
 import { recipes } from './food/recipes';
 import {
   defaultDishes,
@@ -34,6 +35,10 @@ function validNutrition(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
     ? value
     : 0;
+}
+
+function isMeal(value: unknown): value is Meal {
+  return value === 'breakfast' || value === 'lunch' || value === 'dinner';
 }
 
 export function sanitizeMealLog(raw: unknown): Record<string, MealEntry[]> {
@@ -72,6 +77,7 @@ export function sanitizeMealLog(raw: unknown): Record<string, MealEntry[]> {
         id,
         dishId,
         at,
+        meal: isMeal(record.meal) ? record.meal : getMealForTime(new Date(at)),
         kcal: validNutrition(Object.prototype.hasOwnProperty.call(record, 'kcal')
           ? record.kcal
           : recipe?.kcal),
@@ -92,6 +98,71 @@ function sanitizeWeeklyLog(raw: unknown): Record<string, boolean> {
 
   return Object.fromEntries(
     Object.entries(raw).filter(([date, completed]) => DATE_KEY.test(date) && completed === true),
+  );
+}
+
+function mergeDefaultsById<T extends { id: string }>(raw: unknown, defaults: T[]): T[] {
+  const records = new Map<string, T>();
+
+  if (Array.isArray(raw)) {
+    for (const record of raw) {
+      if (!record || typeof record !== 'object' || Array.isArray(record)) continue;
+      if (typeof record.id !== 'string' || !record.id.trim()) continue;
+      if (!records.has(record.id)) records.set(record.id, record as T);
+    }
+  }
+
+  // Preserve saved stock flags, custom records and edits; append only missing IDs.
+  for (const record of defaults) {
+    if (!records.has(record.id)) records.set(record.id, record);
+  }
+
+  return [...records.values()];
+}
+
+function mergeDishes(raw: unknown): Dish[] {
+  const defaults = new Map(defaultDishes.map((dish) => [dish.id, dish]));
+
+  return mergeDefaultsById(raw, defaultDishes).map((dish) => ({
+    ...dish,
+    meals: Array.isArray(dish.meals) && dish.meals.length > 0 && dish.meals.every(isMeal)
+      ? [...new Set(dish.meals)]
+      : [...(defaults.get(dish.id)?.meals ?? ['lunch', 'dinner'])] as Meal[],
+  }));
+}
+
+function sanitizeProfile(raw: unknown): Profile | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const profile = raw as Record<string, unknown>;
+  const inRange = (value: unknown, minimum: number, maximum: number): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= minimum && value <= maximum;
+
+  if (
+    (profile.sex !== 'male' && profile.sex !== 'female') ||
+    !inRange(profile.age, 18, 80) ||
+    !inRange(profile.heightCm, 120, 220) ||
+    !inRange(profile.weightKg, 35, 250) ||
+    ![1.2, 1.375, 1.55, 1.725, 1.9].includes(profile.activity as number) ||
+    ![0.15, 0.2].includes(profile.deficit as number)
+  ) return null;
+
+  return {
+    sex: profile.sex,
+    age: profile.age,
+    heightCm: profile.heightCm,
+    weightKg: profile.weightKg,
+    activity: profile.activity as Profile['activity'],
+    deficit: profile.deficit as Profile['deficit'],
+  };
+}
+
+function sanitizeWeightLog(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+
+  return Object.fromEntries(
+    Object.entries(raw).filter(([date, weight]) =>
+      DATE_KEY.test(date) && typeof weight === 'number' && Number.isFinite(weight) && weight > 0,
+    ),
   );
 }
 
@@ -126,6 +197,8 @@ function createDefaultData(): AppData {
     weeklyPlan: defaultWeeklyPlan,
     weeklyLog: {},
     mealLog: {},
+    profile: null,
+    weightLog: {},
   };
 }
 
@@ -152,6 +225,8 @@ export function loadData(): AppData {
     const data: AppData = {
       ...createDefaultData(),
       ...parsedData,
+      ingredients: mergeDefaultsById(parsedData.ingredients, defaultIngredients),
+      dishes: mergeDishes(parsedData.dishes),
       cardioPlans,
       weeklyPlan: weeklyPlan.map((day) => ({
         ...day,
@@ -159,13 +234,19 @@ export function loadData(): AppData {
       })),
       weeklyLog: sanitizeWeeklyLog(parsedData.weeklyLog),
       mealLog: sanitizeMealLog(parsedData.mealLog),
+      profile: sanitizeProfile(parsedData.profile),
+      weightLog: sanitizeWeightLog(parsedData.weightLog),
     };
 
     if (
+      JSON.stringify(parsedData.ingredients) !== JSON.stringify(data.ingredients) ||
+      JSON.stringify(parsedData.dishes) !== JSON.stringify(data.dishes) ||
       JSON.stringify(parsedData.cardioPlans) !== JSON.stringify(data.cardioPlans) ||
       JSON.stringify(parsedData.weeklyPlan) !== JSON.stringify(data.weeklyPlan) ||
       JSON.stringify(parsedData.weeklyLog) !== JSON.stringify(data.weeklyLog) ||
-      JSON.stringify(parsedData.mealLog) !== JSON.stringify(data.mealLog)
+      JSON.stringify(parsedData.mealLog) !== JSON.stringify(data.mealLog) ||
+      JSON.stringify(parsedData.profile) !== JSON.stringify(data.profile) ||
+      JSON.stringify(parsedData.weightLog) !== JSON.stringify(data.weightLog)
     ) {
       try {
         saveData(data);

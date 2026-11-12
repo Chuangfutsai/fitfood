@@ -10,6 +10,117 @@ export interface Recipe {
 }
 
 export const recipes: Record<string, Recipe> = {
+  'dish-spinach-omelette': {
+    servings: 1,
+    ingredients: [
+      { name: '雞蛋', amount: '3 顆（約 150g）' },
+      { name: '菠菜', amount: '80g' },
+      { name: '洋蔥', amount: '40g' },
+    ],
+    seasonings: [
+      { name: '食用油', amount: '1 小匙（5ml）' },
+      { name: '鹽', amount: '1/4 小匙' },
+      { name: '黑胡椒', amount: '少許' },
+    ],
+    steps: [
+      '菠菜洗淨切段，洋蔥切丁。',
+      '熱鍋放一半的油，中火炒洋蔥 2 分鐘到變軟，加菠菜炒 1 分鐘，盛出後把水分擠乾。',
+      '蛋加鹽和黑胡椒打散。',
+      '平底鍋轉小火，放剩下的油，倒入蛋液並搖勻成薄片。',
+      '蛋液半凝固時鋪上餡料，從一側捲起，再煎 1 分鐘定型。',
+      '切成兩段。',
+    ],
+    tip: '菠菜一定要擠乾水，蛋捲才不會出水破掉。',
+    kcal: 295, proteinG: 22,
+  },
+  'dish-cheese-omelette': {
+    servings: 1,
+    ingredients: [
+      { name: '雞蛋', amount: '3 顆' },
+      { name: '切達起司片', amount: '1 片（約 20g）' },
+      { name: '蔥', amount: '1 根' },
+    ],
+    seasonings: [
+      { name: '食用油', amount: '1 小匙' },
+      { name: '鹽', amount: '少許（起司本身有鹹度）' },
+      { name: '黑胡椒', amount: '少許' },
+    ],
+    steps: [
+      '蔥切花，蛋加鹽和黑胡椒打散。',
+      '中小火熱油，倒入蛋液，用筷子快速攪拌 20 秒。',
+      '蛋液半熟時，把起司放在半邊。',
+      '對折，關火燜 30 秒讓起司融化。',
+      '盛盤，撒上蔥花。',
+    ],
+    tip: '全程中小火，外層才不會焦、裡面保持滑嫩。',
+    kcal: 340, proteinG: 24,
+  },
+  'dish-chicken-egg-toast': {
+    servings: 1,
+    ingredients: [
+      { name: '全麥吐司', amount: '2 片（約 60g）' },
+      { name: '雞胸肉', amount: '80g' },
+      { name: '雞蛋', amount: '1 顆' },
+      { name: '小黃瓜', amount: '30g' },
+    ],
+    seasonings: [
+      { name: '食用油', amount: '1/2 小匙' },
+      { name: '鹽', amount: '1/4 小匙' },
+      { name: '黑胡椒', amount: '少許' },
+    ],
+    steps: [
+      '雞胸肉橫切成 1 公分厚的片，抹鹽和黑胡椒醃 5 分鐘。',
+      '中火熱油，雞胸肉每面煎 2～3 分鐘到全熟。',
+      '同一鍋煎蛋，戳破蛋黃煎到全熟。',
+      '吐司烤 2 分鐘，小黃瓜切薄片。',
+      '依序疊上吐司、雞胸肉、蛋、小黃瓜、吐司，壓緊後對角切開。',
+    ],
+    tip: '雞胸肉可以前一晚先煎好冷藏，早上只要煎蛋，5 分鐘就能完成。',
+    kcal: 335, proteinG: 31,
+  },
+  'dish-tomato-egg-toast': {
+    servings: 1,
+    ingredients: [
+      { name: '全麥吐司', amount: '2 片' },
+      { name: '雞蛋', amount: '2 顆' },
+      { name: '番茄', amount: '半顆（約 100g）' },
+      { name: '蔥', amount: '1 根' },
+    ],
+    seasonings: [
+      { name: '食用油', amount: '1 小匙' },
+      { name: '鹽', amount: '1/4 小匙' },
+      { name: '糖', amount: '1/4 小匙' },
+    ],
+    steps: [
+      '番茄切小丁，蔥切花，蛋加鹽打散。',
+      '熱油，把蛋炒到七分熟後盛出。',
+      '同一鍋炒番茄到出汁，加糖。',
+      '倒回蛋和蔥拌勻，炒到湯汁收乾。',
+      '吐司烤好，夾入餡料，對角切開。',
+    ],
+    tip: '番茄一定要炒到收汁，吐司才不會濕軟。',
+    kcal: 355, proteinG: 20,
+  },
+  'dish-yogurt-banana-oats': {
+    servings: 1,
+    ingredients: [
+      { name: '無糖希臘優格', amount: '200g' },
+      { name: '香蕉', amount: '1 根（約 100g）' },
+      { name: '燕麥片', amount: '30g' },
+    ],
+    seasonings: [
+      { name: '蜂蜜', amount: '1 小匙（可省略）' },
+      { name: '肉桂粉', amount: '少許' },
+    ],
+    steps: [
+      '優格放進碗裡。',
+      '香蕉切片鋪在上面。',
+      '撒上燕麥片。',
+      '淋蜂蜜、撒肉桂粉。',
+    ],
+    tip: '喜歡軟一點的口感，可以前一晚把燕麥拌進優格冷藏。',
+    kcal: 370, proteinG: 25,
+  },
     "dish-tomato-egg": {
       "servings": 1,
       "ingredients": [

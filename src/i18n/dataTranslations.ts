@@ -5,6 +5,11 @@ type NameTranslation = { en: string };
 type CardioTranslation = { name: string; steps: string[] };
 
 export const dishTranslations: Record<string, NameTranslation & { wheelEn: string }> = {
+  'dish-spinach-omelette': { en: 'Spinach & Onion Omelette', wheelEn: 'Spinach Omelette' },
+  'dish-cheese-omelette': { en: 'Cheese Omelette', wheelEn: 'Cheese Omelette' },
+  'dish-chicken-egg-toast': { en: 'Chicken & Egg Toasted Sandwich', wheelEn: 'Chicken Toast' },
+  'dish-tomato-egg-toast': { en: 'Tomato & Egg Toasted Sandwich', wheelEn: 'Tomato Toast' },
+  'dish-yogurt-banana-oats': { en: 'Greek Yogurt, Banana & Oat Bowl', wheelEn: 'Yogurt Oats' },
   'dish-tomato-egg': { en: 'Tomato & Egg Stir-fry', wheelEn: 'Tomato Egg' },
   'dish-chicken-broccoli': { en: 'Chicken & Broccoli Stir-fry', wheelEn: 'Chicken Broccoli' },
   'dish-pork-cabbage': { en: 'Pork & Cabbage Stir-fry', wheelEn: 'Pork Cabbage' },
@@ -58,6 +63,11 @@ export const dishTranslations: Record<string, NameTranslation & { wheelEn: strin
 };
 
 export const ingredientTranslations: Record<string, NameTranslation> = {
+  'ing-toast': { en: 'Whole Wheat Bread' },
+  'ing-oats': { en: 'Rolled Oats' },
+  'ing-cheese': { en: 'Sliced Cheddar' },
+  'ing-greek-yogurt': { en: 'Unsweetened Greek Yogurt' },
+  'ing-banana': { en: 'Banana' },
   'ing-egg': { en: 'Eggs' },
   'ing-chicken': { en: 'Chicken Breast' },
   'ing-chicken-thigh': { en: 'Boneless Chicken Thigh' },
@@ -364,6 +374,117 @@ export const exerciseTranslations: Record<string, NameTranslation> = {
 };
 
 export const recipeTranslations: Record<string, Recipe> = {
+  'dish-spinach-omelette': {
+    servings: 1,
+    ingredients: [
+      { name: 'Eggs', amount: '3 (about 150 g)' },
+      { name: 'Spinach', amount: '80 g' },
+      { name: 'Onion', amount: '40 g' },
+    ],
+    seasonings: [
+      { name: 'Cooking oil', amount: '1 tsp (5 ml)' },
+      { name: 'Salt', amount: '1/4 tsp' },
+      { name: 'Black pepper', amount: 'A pinch' },
+    ],
+    steps: [
+      'Wash and chop the spinach. Dice the onion.',
+      'Heat a pan with half the oil. Cook the onion over medium heat for 2 minutes until softened, then add the spinach and cook for 1 minute. Transfer to a plate and squeeze out the moisture.',
+      'Beat the eggs with the salt and black pepper.',
+      'Turn the pan down to low heat and add the remaining oil. Pour in the eggs and tilt the pan to form a thin, even layer.',
+      'When the eggs are partly set, spread the filling on top. Roll up from one side and cook for 1 more minute to hold its shape.',
+      'Cut into two pieces.',
+    ],
+    tip: 'Squeeze the spinach dry so excess moisture does not make the omelette split.',
+    kcal: 295, proteinG: 22,
+  },
+  'dish-cheese-omelette': {
+    servings: 1,
+    ingredients: [
+      { name: 'Eggs', amount: '3' },
+      { name: 'Sliced cheddar', amount: '1 slice (about 20 g)' },
+      { name: 'Scallion', amount: '1 stalk' },
+    ],
+    seasonings: [
+      { name: 'Cooking oil', amount: '1 tsp' },
+      { name: 'Salt', amount: 'A pinch (the cheese is already salty)' },
+      { name: 'Black pepper', amount: 'A pinch' },
+    ],
+    steps: [
+      'Finely slice the scallion. Beat the eggs with the salt and black pepper.',
+      'Heat the oil over medium-low heat. Pour in the eggs and stir quickly with chopsticks for 20 seconds.',
+      'When the eggs are partly set, place the cheese on one half.',
+      'Fold the omelette in half, turn off the heat and cover for 30 seconds to melt the cheese.',
+      'Transfer to a plate and scatter the scallion on top.',
+    ],
+    tip: 'Keep the heat medium-low throughout for a tender center without a browned exterior.',
+    kcal: 340, proteinG: 24,
+  },
+  'dish-chicken-egg-toast': {
+    servings: 1,
+    ingredients: [
+      { name: 'Whole wheat bread', amount: '2 slices (about 60 g)' },
+      { name: 'Chicken breast', amount: '80 g' },
+      { name: 'Egg', amount: '1' },
+      { name: 'Cucumber', amount: '30 g' },
+    ],
+    seasonings: [
+      { name: 'Cooking oil', amount: '1/2 tsp' },
+      { name: 'Salt', amount: '1/4 tsp' },
+      { name: 'Black pepper', amount: 'A pinch' },
+    ],
+    steps: [
+      'Slice the chicken breast horizontally into 1 cm thick pieces. Season with the salt and black pepper and marinate for 5 minutes.',
+      'Heat the oil over medium heat. Pan-fry the chicken for 2–3 minutes per side until fully cooked.',
+      'Fry the egg in the same pan, breaking the yolk and cooking it until fully set.',
+      'Toast the bread for 2 minutes and thinly slice the cucumber.',
+      'Layer the bread, chicken, egg, cucumber and remaining bread. Press gently and cut diagonally.',
+    ],
+    tip: 'Cook and refrigerate the chicken the night before. In the morning, just fry the egg and assemble the sandwich in 5 minutes.',
+    kcal: 335, proteinG: 31,
+  },
+  'dish-tomato-egg-toast': {
+    servings: 1,
+    ingredients: [
+      { name: 'Whole wheat bread', amount: '2 slices' },
+      { name: 'Eggs', amount: '2' },
+      { name: 'Tomato', amount: '1/2 (about 100 g)' },
+      { name: 'Scallion', amount: '1 stalk' },
+    ],
+    seasonings: [
+      { name: 'Cooking oil', amount: '1 tsp' },
+      { name: 'Salt', amount: '1/4 tsp' },
+      { name: 'Sugar', amount: '1/4 tsp' },
+    ],
+    steps: [
+      'Finely dice the tomato and slice the scallion. Beat the eggs with the salt.',
+      'Heat the oil and scramble the eggs until mostly set, then transfer to a plate.',
+      'Cook the tomato in the same pan until it releases its juices, then add the sugar.',
+      'Return the eggs to the pan with the scallion. Stir together and cook until the liquid has evaporated.',
+      'Toast the bread, add the filling and cut the sandwich diagonally.',
+    ],
+    tip: 'Cook off the tomato juices so the toast stays crisp rather than soggy.',
+    kcal: 355, proteinG: 20,
+  },
+  'dish-yogurt-banana-oats': {
+    servings: 1,
+    ingredients: [
+      { name: 'Unsweetened Greek yogurt', amount: '200 g' },
+      { name: 'Banana', amount: '1 (about 100 g)' },
+      { name: 'Rolled oats', amount: '30 g' },
+    ],
+    seasonings: [
+      { name: 'Honey', amount: '1 tsp (optional)' },
+      { name: 'Ground cinnamon', amount: 'A pinch' },
+    ],
+    steps: [
+      'Spoon the yogurt into a bowl.',
+      'Slice the banana and arrange it on top.',
+      'Sprinkle with the oats.',
+      'Drizzle with the honey and add the cinnamon.',
+    ],
+    tip: 'For a softer texture, stir the oats into the yogurt and refrigerate overnight.',
+    kcal: 370, proteinG: 25,
+  },
     "dish-tomato-egg": {
       "servings": 1,
       "ingredients": [

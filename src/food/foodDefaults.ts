@@ -1,4 +1,4 @@
-import type { Dish, Ingredient } from '../types';
+import type { Dish, Ingredient, Meal } from '../types';
 
 export const defaultIngredients: Ingredient[] = [
   { id: 'ing-egg', name: '雞蛋', category: 'protein', inStock: true },
@@ -30,9 +30,14 @@ export const defaultIngredients: Ingredient[] = [
   { id: 'ing-ginger', name: '薑', category: 'other', inStock: true },
   { id: 'ing-salt', name: '鹽', category: 'other', inStock: true },
   { id: 'ing-pepper-seasoning', name: '黑胡椒', category: 'other', inStock: true },
+  { id: 'ing-toast', name: '全麥吐司', category: 'carb', inStock: true },
+  { id: 'ing-oats', name: '燕麥片', category: 'carb', inStock: true },
+  { id: 'ing-cheese', name: '切達起司片', category: 'protein', inStock: true },
+  { id: 'ing-greek-yogurt', name: '無糖希臘優格', category: 'protein', inStock: true },
+  { id: 'ing-banana', name: '香蕉', category: 'other', inStock: true },
 ];
 
-export const defaultDishes: Dish[] = [
+const originalDishes: Omit<Dish, 'meals'>[] = [
   {
     id: 'dish-tomato-egg',
     name: '番茄炒蛋',
@@ -333,5 +338,42 @@ export const defaultDishes: Dish[] = [
     name: '甜椒雞絲炒麵',
     ingredientIds: ['ing-chicken', 'ing-pepper', 'ing-noodle'],
     minutes: 20,
+  },
+];
+
+const carbIngredientIds = new Set(
+  defaultIngredients.filter((ingredient) => ingredient.category === 'carb').map((ingredient) => ingredient.id),
+);
+const existingBreakfastIds = new Set([
+  'dish-tomato-egg', 'dish-egg-spinach', 'dish-egg-pepper', 'dish-egg-potato',
+]);
+
+export const defaultDishes: Dish[] = [
+  ...originalDishes.map((dish): Dish => {
+    const meals: Meal[] = dish.ingredientIds.some((id) => carbIngredientIds.has(id))
+      ? ['lunch']
+      : ['lunch', 'dinner'];
+    if (existingBreakfastIds.has(dish.id)) meals.push('breakfast');
+    return { ...dish, meals };
+  }),
+  {
+    id: 'dish-spinach-omelette', name: '菠菜洋蔥蛋捲', minutes: 12,
+    ingredientIds: ['ing-egg', 'ing-spinach', 'ing-onion'], meals: ['breakfast'],
+  },
+  {
+    id: 'dish-cheese-omelette', name: '起司歐姆蛋', minutes: 8,
+    ingredientIds: ['ing-egg', 'ing-cheese', 'ing-scallion'], meals: ['breakfast'],
+  },
+  {
+    id: 'dish-chicken-egg-toast', name: '雞胸肉蛋吐司', minutes: 15,
+    ingredientIds: ['ing-toast', 'ing-chicken', 'ing-egg', 'ing-cucumber'], meals: ['breakfast'],
+  },
+  {
+    id: 'dish-tomato-egg-toast', name: '番茄炒蛋吐司', minutes: 12,
+    ingredientIds: ['ing-toast', 'ing-egg', 'ing-tomato', 'ing-scallion'], meals: ['breakfast'],
+  },
+  {
+    id: 'dish-yogurt-banana-oats', name: '希臘優格香蕉燕麥碗', minutes: 3,
+    ingredientIds: ['ing-greek-yogurt', 'ing-banana', 'ing-oats'], meals: ['breakfast'],
   },
 ];

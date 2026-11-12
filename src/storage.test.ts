@@ -3,6 +3,7 @@ import type { MealEntry } from './types';
 import { recipes } from './food/recipes';
 import { createMealId, loadData, sanitizeMealLog } from './storage';
 import { defaultCardioPlans } from './fitness/fitnessDefaults';
+import { defaultDishes, defaultIngredients } from './food/foodDefaults';
 
 const date = '2026-11-12';
 const validEntry: MealEntry = {
@@ -11,6 +12,7 @@ const validEntry: MealEntry = {
   at: 1794511800000,
   kcal: 123,
   proteinG: 17,
+  meal: 'lunch',
 };
 
 afterEach(() => {
@@ -59,21 +61,45 @@ describe('sanitizeMealLog', () => {
   });
 
   it('migrates old entries with a new ID and recipe nutrient snapshots', () => {
-    const oldEntry = { dishId: 'dish-tomato-egg', at: 123 };
+    const oldEntry = { dishId: 'dish-tomato-egg', at: new Date(2026, 10, 12, 8).getTime() };
     const result = sanitizeMealLog({ [date]: [oldEntry] });
     expect(result[date]).toEqual([{
       ...oldEntry,
       id: expect.any(String),
       kcal: recipes[oldEntry.dishId].kcal,
       proteinG: recipes[oldEntry.dishId].proteinG,
+      meal: 'breakfast',
     }]);
     expect(result[date][0].id.length).toBeGreaterThan(0);
-    expect(oldEntry).toEqual({ dishId: 'dish-tomato-egg', at: 123 });
+    expect(oldEntry).toEqual({ dishId: 'dish-tomato-egg', at: new Date(2026, 10, 12, 8).getTime() });
   });
 
   it('uses zero nutrient snapshots for legacy custom dishes without recipes', () => {
-    const result = sanitizeMealLog({ [date]: [{ dishId: 'dish-custom', at: 123 }] });
-    expect(result[date][0]).toEqual({ dishId: 'dish-custom', at: 123, id: expect.any(String), kcal: 0, proteinG: 0 });
+    const at = new Date(2026, 10, 12, 19).getTime();
+    const result = sanitizeMealLog({ [date]: [{ dishId: 'dish-custom', at }] });
+    expect(result[date][0]).toEqual({ dishId: 'dish-custom', at, id: expect.any(String), kcal: 0, proteinG: 0, meal: 'dinner' });
+  });
+
+  it.each([
+    [10, 29, 'breakfast'],
+    [10, 30, 'lunch'],
+    [15, 59, 'lunch'],
+    [16, 0, 'dinner'],
+  ] as const)('infers a missing meal at %i:%i as %s using local time', (hour, minute, meal) => {
+    const at = new Date(2026, 10, 12, hour, minute).getTime();
+    const result = sanitizeMealLog({ [date]: [{ dishId: 'dish-custom', at }] });
+    expect(result[date][0].meal).toBe(meal);
+  });
+
+  it.each([undefined, null, '', 'snack', 1, ['lunch']])('repairs an invalid meal value (%s) from the recorded time', (meal) => {
+    const at = new Date(2026, 10, 12, 18).getTime();
+    const result = sanitizeMealLog({ [date]: [{ ...validEntry, at, meal }] });
+    expect(result[date][0]).toEqual({ ...validEntry, at, meal: 'dinner' });
+  });
+
+  it('preserves a selected meal even when it differs from the timestamp default', () => {
+    const entry = { ...validEntry, at: new Date(2026, 10, 12, 18).getTime(), meal: 'breakfast' };
+    expect(sanitizeMealLog({ [date]: [entry] })).toEqual({ [date]: [entry] });
   });
 
   it.each([-1, Number.NaN, Infinity, '123', null, undefined])('replaces invalid provided nutrients (%s) with zero', (value) => {
@@ -134,6 +160,8 @@ describe('loadData', () => {
     expect(data.weeklyPlan).toHaveLength(7);
     expect(data.mealLog).toEqual({});
     expect(data.weeklyLog).toEqual({});
+    expect(data.profile).toBeNull();
+    expect(data.weightLog).toEqual({});
   });
 
   it('does not throw when reading localStorage is blocked', () => {
@@ -240,7 +268,8 @@ describe('loadData', () => {
       weeklyLog: { [date]: true, '2026-11-13': false, '2026-11-14': 1, '2026-11-15': 'true', bad: true },
     }));
     const data = loadData();
-    expect(data.dishes).toEqual([customDish]);
+    expect(data.dishes).toContainEqual({ ...customDish, meals: ['lunch', 'dinner'] });
+    expect(data.dishes).toHaveLength(defaultDishes.length + 1);
     expect(data.mealLog).toEqual({ [date]: [validEntry] });
     expect(data.weeklyLog).toEqual({ [date]: true });
     expect(storage.getItem).toHaveBeenCalledWith('fitfood:v1');
@@ -264,5 +293,101 @@ describe('loadData', () => {
     const second = loadData();
     expect(second.mealLog).toEqual(first.mealLog);
     expect(second.mealLog[date][0].id.length).toBeGreaterThan(0);
+  });
+
+  it('adds the five missing breakfast ingredients and dishes without losing saved edits or stock flags', () => {
+    const newIngredientIds = new Set(['ing-toast', 'ing-oats', 'ing-cheese', 'ing-greek-yogurt', 'ing-banana']);
+    const newDishIds = new Set([
+      'dish-spinach-omelette', 'dish-cheese-omelette', 'dish-chicken-egg-toast',
+      'dish-tomato-egg-toast', 'dish-yogurt-banana-oats',
+    ]);
+    const ingredients = defaultIngredients
+      .filter((ingredient) => !newIngredientIds.has(ingredient.id))
+      .map((ingredient) => ({ ...ingredient, inStock: false }));
+    const dishes = defaultDishes.filter((dish) => !newDishIds.has(dish.id));
+    const editedIngredient = { ...ingredients[0], name: 'My Ingredient' };
+    ingredients[0] = editedIngredient;
+    const editedDish = { ...dishes[0], name: 'My Recipe', minutes: 99 };
+    dishes[0] = editedDish;
+    const storage = mockStorage(JSON.stringify({ ingredients, dishes }));
+    const data = loadData();
+    expect(data.ingredients).toHaveLength(34);
+    expect(data.dishes).toHaveLength(55);
+    expect(data.ingredients.find((ingredient) => ingredient.id === editedIngredient.id)).toEqual(editedIngredient);
+    expect(data.ingredients.filter((ingredient) => !newIngredientIds.has(ingredient.id)).every((ingredient) => !ingredient.inStock)).toBe(true);
+    expect(data.ingredients.filter((ingredient) => newIngredientIds.has(ingredient.id)).every((ingredient) => ingredient.inStock)).toBe(true);
+    expect(data.dishes.find((dish) => dish.id === editedDish.id)).toEqual(editedDish);
+    expect(new Set(data.ingredients.map((ingredient) => ingredient.id)).size).toBe(34);
+    expect(new Set(data.dishes.map((dish) => dish.id)).size).toBe(55);
+    expect(storage.setItem).toHaveBeenCalledWith('fitfood:v1', JSON.stringify(data));
+  });
+
+  it('fills legacy default meals from their default tags and gives custom dishes lunch and dinner', () => {
+    const breakfast = defaultDishes.find((dish) => dish.id === 'dish-egg-potato')!;
+    const { meals: _meals, ...legacyDish } = breakfast;
+    const custom = { id: 'dish-my-own', name: 'My Dish', ingredientIds: ['ing-egg'], minutes: 8 };
+    mockStorage(JSON.stringify({ dishes: [legacyDish, custom] }));
+    const data = loadData();
+    expect(data.dishes.find((dish) => dish.id === legacyDish.id)).toEqual(breakfast);
+    expect(data.dishes.find((dish) => dish.id === custom.id)).toEqual({ ...custom, meals: ['lunch', 'dinner'] });
+  });
+
+  it('preserves custom dishes, ingredients and valid explicit meal choices', () => {
+    const customIngredient = { id: 'ing-custom', name: 'Custom Ingredient', category: 'other', inStock: false };
+    const editedDish = { ...defaultDishes[0], meals: ['dinner'] };
+    const customDish = { id: 'dish-custom', name: 'Custom Dish', ingredientIds: [customIngredient.id], minutes: 8, meals: ['breakfast'] };
+    mockStorage(JSON.stringify({ ingredients: [customIngredient], dishes: [editedDish, customDish] }));
+    const data = loadData();
+    expect(data.ingredients[0]).toEqual(customIngredient);
+    expect(data.dishes.slice(0, 2)).toEqual([editedDish, customDish]);
+  });
+
+  it.each([null, [], ['snack'], 'breakfast'])('repairs invalid dish meal tags (%s)', (meals) => {
+    const dish = defaultDishes[0];
+    mockStorage(JSON.stringify({ dishes: [{ ...dish, meals }] }));
+    expect(loadData().dishes.find((entry) => entry.id === dish.id)?.meals).toEqual(dish.meals);
+  });
+
+  const validProfile = {
+    sex: 'female', age: 32, heightCm: 165, weightKg: 62, activity: 1.55, deficit: 0.15,
+  };
+
+  it('preserves a valid profile and dated weight history', () => {
+    mockStorage(JSON.stringify({ profile: validProfile, weightLog: { [date]: 62, '2026-11-11': 62.4 } }));
+    const data = loadData();
+    expect(data.profile).toEqual(validProfile);
+    expect(data.weightLog).toEqual({ [date]: 62, '2026-11-11': 62.4 });
+  });
+
+  it.each([
+    ['sex', 'other'], ['sex', null], ['age', 17], ['age', 81], ['age', '32'],
+    ['heightCm', 119], ['heightCm', 221], ['heightCm', null],
+    ['weightKg', 34], ['weightKg', 251], ['weightKg', Infinity],
+    ['activity', 1.5], ['activity', '1.55'], ['deficit', 0.25], ['deficit', '0.15'],
+  ])('invalidates the entire profile when %s is %s', (field, value) => {
+    const storage = mockStorage(JSON.stringify({ profile: { ...validProfile, [field]: value } }));
+    const data = loadData();
+    expect(data.profile).toBeNull();
+    expect(storage.setItem).toHaveBeenCalledWith('fitfood:v1', JSON.stringify(data));
+  });
+
+  it.each(Object.keys(validProfile))('invalidates the entire profile when %s is missing', (field) => {
+    const profile = { ...validProfile } as Record<string, unknown>;
+    delete profile[field];
+    mockStorage(JSON.stringify({ profile }));
+    expect(loadData().profile).toBeNull();
+  });
+
+  it.each([
+    { ...validProfile, sex: 'male', age: 18, heightCm: 120, weightKg: 35, activity: 1.2, deficit: 0.2 },
+    { ...validProfile, age: 80, heightCm: 220, weightKg: 250, activity: 1.9 },
+  ])('accepts inclusive profile bounds', (profile) => {
+    mockStorage(JSON.stringify({ profile }));
+    expect(loadData().profile).toEqual(profile);
+  });
+
+  it('discards corrupt weight entries while retaining valid history', () => {
+    mockStorage(JSON.stringify({ weightLog: { [date]: 62, bad: 61, '2026-11-11': '62', '2026-11-10': -1, '2026-11-09': null } }));
+    expect(loadData().weightLog).toEqual({ [date]: 62 });
   });
 });

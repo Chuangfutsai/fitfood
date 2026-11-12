@@ -1,10 +1,10 @@
 import { useEffect, useId, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Check, ChevronDown, Trash2, UtensilsCrossed } from 'lucide-react';
 import type { AppData, MealEntry } from '../types';
 import { Card } from '../ui/Card';
 import { useLang } from '../i18n/LanguageContext';
-import { getLocalDateKey, getTodayNutrition } from '../stats';
+import { getCalorieStatus, getDailyTargets, getLocalDateKey, getTodayNutrition } from '../stats';
 
 export interface MealNotice {
   messageKey: string;
@@ -15,6 +15,7 @@ interface TodayMealsProps {
   data: AppData;
   setData: (next: AppData | ((previous: AppData) => AppData)) => void;
   onNotice: (notice: MealNotice) => void;
+  onOpenGoals: () => void;
 }
 
 function MealImage({ dishId, name }: { dishId: string; name: string }) {
@@ -38,7 +39,7 @@ function MealImage({ dishId, name }: { dishId: string; name: string }) {
   );
 }
 
-export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
+export function TodayMeals({ data, setData, onNotice, onOpenGoals }: TodayMealsProps) {
   const { t, tDish, formatDate } = useLang();
   const [today, setToday] = useState(() => new Date());
   const [expanded, setExpanded] = useState(false);
@@ -74,6 +75,10 @@ export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
   const nutrition = getTodayNutrition(data, today);
   const hasEntries = entries.length > 0;
   const isExpanded = expanded && hasEntries;
+  const targets = data.profile ? getDailyTargets(data.profile) : null;
+  const calorieStatus = targets ? getCalorieStatus(nutrition.kcal, targets.kcal) : 'food';
+  const calorieColor = { food: 'bg-food', fit: 'bg-fit', tomato: 'bg-tomato' }[calorieStatus];
+  const calorieText = { food: 'text-food', fit: 'text-fit', tomato: 'text-tomato-ink' }[calorieStatus];
 
   useEffect(() => {
     setExpanded(false);
@@ -135,13 +140,17 @@ export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
         aria-expanded={isExpanded}
         aria-controls={listId}
         disabled={!hasEntries}
-        className="flex h-[54px] w-full items-center gap-2 px-3 text-left text-xs leading-4 transition-transform enabled:active:scale-[0.97]"
+        className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs leading-4 transition-transform enabled:active:scale-[0.97]"
         onClick={() => setExpanded((previous) => !previous)}
       >
         <span className="shrink-0 font-bold text-text">{t('food.meals.title')}</span>
         <span className="min-w-0 flex-1 truncate text-right text-muted tabular-nums">
           {hasEntries
-            ? t(entries.length === 1 ? 'food.meals.summaryOne' : 'food.meals.summary', { n: entries.length, kcal: nutrition.kcal, g: nutrition.proteinG })
+            ? targets
+              ? calorieStatus === 'tomato'
+                ? `${t(entries.length === 1 ? 'food.meals.countOne' : 'food.meals.count', { count: entries.length })} · ${t('goals.over', { count: nutrition.kcal - targets.kcal })}`
+                : t(entries.length === 1 ? 'food.meals.countOne' : 'food.meals.count', { count: entries.length })
+              : t(entries.length === 1 ? 'food.meals.summaryOne' : 'food.meals.summary', { n: entries.length, kcal: nutrition.kcal, g: nutrition.proteinG })
             : t('food.meals.notRecorded')}
         </span>
         <ChevronDown
@@ -150,6 +159,46 @@ export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
           className={`shrink-0 text-muted transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''} ${hasEntries ? '' : 'opacity-40'}`}
         />
       </button>
+      {targets ? (
+        <div className="space-y-1 px-3 pb-2 text-[10px] leading-3 tabular-nums">
+          <div className="flex items-center gap-2">
+            <span className={`w-[48%] shrink-0 truncate ${calorieText}`}>
+              {t('goals.caloriesProgress', { eaten: nutrition.kcal, target: targets.kcal })}
+            </span>
+            <div
+              role="progressbar"
+              aria-label={t('goals.calories')}
+              aria-valuemin={0}
+              aria-valuemax={targets.kcal}
+              aria-valuenow={Math.min(nutrition.kcal, targets.kcal)}
+              aria-valuetext={t('goals.caloriesProgress', { eaten: nutrition.kcal, target: targets.kcal })}
+              className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"
+            >
+              <div className={`h-full rounded-full transition-[width] ${calorieColor}`} style={{ width: `${Math.min(100, nutrition.kcal / targets.kcal * 100)}%` }} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-muted">
+            <span className="flex w-[48%] shrink-0 items-center gap-1">
+              <span className="truncate">{t('goals.proteinProgress', { eaten: nutrition.proteinG, target: targets.proteinG })}</span>
+              {nutrition.proteinG >= targets.proteinG && <Check size={12} className="shrink-0 text-ok" aria-label={t('goals.proteinMet')} />}
+            </span>
+            <div
+              role="progressbar"
+              aria-label={t('goals.proteinProgress', { eaten: nutrition.proteinG, target: targets.proteinG })}
+              aria-valuemin={0}
+              aria-valuemax={targets.proteinG}
+              aria-valuenow={Math.min(nutrition.proteinG, targets.proteinG)}
+              className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"
+            >
+              <div className="h-full rounded-full bg-food transition-[width]" style={{ width: `${Math.min(100, nutrition.proteinG / targets.proteinG * 100)}%` }} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={onOpenGoals} className="block h-10 w-full truncate px-3 pb-2 text-left text-xs font-medium text-food">
+          {t('goals.invitation')}
+        </button>
+      )}
 
       <AnimatePresence initial={false}>
         {isExpanded && (
@@ -177,6 +226,7 @@ export function TodayMeals({ data, setData, onNotice }: TodayMealsProps) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-text">{name}</p>
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted tabular-nums">
+                    <span className="rounded-full bg-food/10 px-2 text-food">{t(`meal.${entry.meal}`)}</span>
                     <time dateTime={validTime ? recordedAt.toISOString() : undefined}>
                       {validTime
                         ? formatDate(recordedAt, { hour: '2-digit', minute: '2-digit' })

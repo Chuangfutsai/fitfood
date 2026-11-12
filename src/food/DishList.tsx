@@ -117,6 +117,7 @@ export function DishList({ data, setData }: DishListProps) {
           name: trimmedName,
           ingredientIds: selectedIngredientIds,
           minutes: Math.max(1, Number(minutes) || 1),
+          meals: ['lunch', 'dinner'],
         },
       ],
     });

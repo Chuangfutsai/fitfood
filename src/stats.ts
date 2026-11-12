@@ -1,4 +1,4 @@
-import type { AppData, Dish } from './types';
+import type { AppData, Dish, Meal, Profile } from './types';
 
 export function getLocalDateKey(date: Date): string {
   const year = date.getFullYear();
@@ -6,6 +6,35 @@ export function getLocalDateKey(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
+}
+
+export function getMealForTime(date: Date): Meal {
+  const minutes = date.getHours() * 60 + date.getMinutes();
+  if (minutes < 10 * 60 + 30) return 'breakfast';
+  if (minutes < 16 * 60) return 'lunch';
+  return 'dinner';
+}
+
+export function getBMR(profile: Profile): number {
+  return 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age
+    + (profile.sex === 'male' ? 5 : -161);
+}
+
+export function getDailyTargets(profile: Profile): { bmr: number; kcal: number; proteinG: number } {
+  const bmr = getBMR(profile);
+  const minimumKcal = profile.sex === 'male' ? 1500 : 1200;
+
+  return {
+    bmr,
+    kcal: Math.max(minimumKcal, Math.round(bmr * profile.activity * (1 - profile.deficit))),
+    proteinG: Math.round(1.6 * profile.weightKg),
+  };
+}
+
+export function getCalorieStatus(consumed: number, target: number): 'food' | 'fit' | 'tomato' {
+  if (consumed > target) return 'tomato';
+  if (consumed >= target * 0.9) return 'fit';
+  return 'food';
 }
 
 // Count completed training days using the current weekly schedule; rest days do not break the streak.
