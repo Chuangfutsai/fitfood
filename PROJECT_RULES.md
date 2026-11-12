@@ -224,7 +224,7 @@ export interface AppData {
 - 一次回答最多改 3 個檔案。超過就拆成多次，先問使用者。
 
 ### 7.3 程式碼規範
-- 程式碼註解一律英文。UI 顯示文字一律繁體中文。
+- 程式碼註解一律英文。UI 顯示文字一律透過 t() 取得，支援 zh-Hant / en。
 - TypeScript strict，不可用 `any`。
 - 元件用 function component + hooks。
 - 不可使用 `alert()`、`confirm()`、`prompt()`，改用 `Sheet`。

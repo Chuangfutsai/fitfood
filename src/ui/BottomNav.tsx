@@ -1,4 +1,5 @@
 import { ChefHat, Dumbbell } from 'lucide-react';
+import { useLang } from '../i18n/LanguageContext';
 
 interface BottomNavProps {
   tab: 'food' | 'fit';
@@ -17,6 +18,7 @@ const tabStyles = {
 };
 
 export function BottomNav({ tab, onChange }: BottomNavProps) {
+  const { t } = useLang();
   const foodSelected = tab === 'food';
   const fitSelected = tab === 'fit';
 
@@ -36,7 +38,7 @@ export function BottomNav({ tab, onChange }: BottomNavProps) {
             />
           )}
           <ChefHat className="relative" size={22} />
-          <span className="relative">吃</span>
+          <span className="relative truncate">{t('nav.food')}</span>
         </button>
         <button
           type="button"
@@ -51,7 +53,7 @@ export function BottomNav({ tab, onChange }: BottomNavProps) {
             />
           )}
           <Dumbbell className="relative" size={22} />
-          <span className="relative">練</span>
+          <span className="relative truncate">{t('nav.fit')}</span>
         </button>
       </div>
     </nav>

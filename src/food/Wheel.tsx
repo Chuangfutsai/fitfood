@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useRef, useState } from 'react';
+import { useLang } from '../i18n/LanguageContext';
 
 interface WheelItem {
   id: string;
@@ -57,7 +58,39 @@ function createSlicePath(startAngle: number, endAngle: number): string {
   ].join(' ');
 }
 
-function splitLabel(label: string): string[] {
+function splitLabel(label: string, isEnglish: boolean): string[] {
+  if (isEnglish) {
+    const words = label.trim().split(/\s+/);
+    const lines: string[] = [];
+
+    while (words.length > 0 && lines.length < 2) {
+      const lineWords: string[] = [];
+
+      while (
+        words.length > 0 &&
+        [...lineWords, words[0]].join(' ').length <= 12
+      ) {
+        lineWords.push(words.shift()!);
+      }
+
+      if (lineWords.length === 0) {
+        lines.push('…');
+        break;
+      }
+
+      if (lines.length === 1 && words.length > 0) {
+        while (lineWords.join(' ').length + 1 > 12) {
+          lineWords.pop();
+        }
+        lines.push(`${lineWords.join(' ')}…`);
+      } else {
+        lines.push(lineWords.join(' '));
+      }
+    }
+
+    return lines;
+  }
+
   if (label.length <= 4) {
     return [label];
   }
@@ -73,6 +106,7 @@ function splitLabel(label: string): string[] {
 }
 
 export function Wheel({ items, onResult }: WheelProps) {
+  const { lang, t } = useLang();
   const wheelItems = items.slice(0, 8);
   const [angle, setAngle] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -150,7 +184,7 @@ export function Wheel({ items, onResult }: WheelProps) {
         viewBox="0 0 360 380"
         className="h-full w-full"
         role="img"
-        aria-label="菜色轉盤"
+        aria-label={t('wheel.label')}
       >
         <circle
           cx={CENTER_X}
@@ -195,7 +229,7 @@ export function Wheel({ items, onResult }: WheelProps) {
             const centerAngle = sliceStart + sliceAngle / 2;
             const labelPosition = pointOnCircle(LABEL_RADIUS, centerAngle);
             const color = sliceColors[index];
-            const labelLines = splitLabel(item.label);
+            const labelLines = splitLabel(item.label, lang === 'en');
             const isWinner = winnerIndex === index;
 
             return (
@@ -257,7 +291,7 @@ export function Wheel({ items, onResult }: WheelProps) {
 
       <motion.button
         type="button"
-        aria-label="開始轉盤"
+        aria-label={t('wheel.start')}
         className="absolute left-1/2 top-[52.63%] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-broccoli bg-surface disabled:cursor-not-allowed disabled:opacity-50"
         animate={
           isSpinning || isFlashing
@@ -273,7 +307,7 @@ export function Wheel({ items, onResult }: WheelProps) {
         onClick={handleSpin}
       >
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-food text-[22px] font-bold text-white">
-          轉
+          {t('wheel.spin')}
         </span>
       </motion.button>
     </div>

@@ -3,19 +3,18 @@ import { motion } from 'framer-motion';
 import { Check, ChevronDown } from 'lucide-react';
 import type { AppData, StrengthFocus } from '../types';
 import { Card } from '../ui/Card';
+import { useLang } from '../i18n/LanguageContext';
 
 interface WeeklyPanelProps {
   data: AppData;
   setData: (data: AppData) => void;
 }
 
-const weekdayLabels = ['日', '一', '二', '三', '四', '五', '六'];
-
 const strengthLabels: Record<StrengthFocus, string> = {
-  push: '推日重訓',
-  pull: '拉日重訓',
-  legs: '腿部重訓',
-  full: '全身重訓',
+  push: 'weekly.strength.push',
+  pull: 'weekly.strength.pull',
+  legs: 'weekly.strength.legs',
+  full: 'weekly.strength.full',
 };
 
 function getLocalDateKey(date: Date): string {
@@ -27,6 +26,7 @@ function getLocalDateKey(date: Date): string {
 }
 
 export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
+  const { lang, t, tCardio, tExercise, formatDate } = useLang();
   const [today, setToday] = useState(() => new Date());
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
@@ -101,18 +101,18 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
       <Card className="shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
         <div className="space-y-4">
           <h2 className="text-[24px] font-extrabold leading-8 text-text">
-            本週已完成{' '}
+            {t('weekly.completedLabel')}{' '}
             <span className="whitespace-nowrap text-fit tabular-nums">
-              {completedDays} / {trainingDays.length} 天
+              {t('weekly.completedDays', { count: completedDays, total: trainingDays.length })}
             </span>
           </h2>
           <div
             role="progressbar"
-            aria-label="本週訓練完成進度"
+            aria-label={t('weekly.progressLabel')}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(progress)}
-            aria-valuetext={`已完成 ${completedDays} / ${trainingDays.length} 天`}
+            aria-valuetext={t('weekly.progressValue', { count: completedDays, total: trainingDays.length })}
             className="h-3 overflow-hidden rounded-full bg-surface-2"
           >
             <motion.div
@@ -130,13 +130,14 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
           const isToday = day.key === todayKey;
           const completed = data.weeklyLog[day.key] === true;
           const expanded = expandedDate === day.key;
-          const weekday = weekdayLabels[day.date.getDay()];
+          const weekday = formatDate(day.date, { weekday: lang === 'en' ? 'short' : 'narrow' });
           const cardioPlan = data.cardioPlans.find(
             (plan) => plan.id === day.cardioPlanId,
           );
           const strengthPlan = data.strengthPlans.find(
             (plan) => plan.focus === day.strengthFocus,
           );
+          const translatedCardio = cardioPlan ? tCardio(cardioPlan) : null;
           const detailsId = `weekly-details-${day.key}`;
 
           return (
@@ -148,8 +149,8 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
             >
               {isToday && (
                 <div className="mb-2 flex justify-end">
-                  <span className="rounded-full bg-fit/10 px-2 py-1 text-xs font-bold text-fit">
-                    今天
+                  <span className="max-w-full truncate rounded-full bg-fit/10 px-2 py-1 text-xs font-bold text-fit">
+                    {t('weekly.today')}
                   </span>
                 </div>
               )}
@@ -157,7 +158,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  aria-label={`星期${weekday} ${day.date.getMonth() + 1}/${day.date.getDate()}訓練詳情`}
+                  aria-label={t('weekly.detailsLabel', { date: formatDate(day.date) })}
                   aria-expanded={expanded}
                   aria-controls={detailsId}
                   className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-[14px] text-left transition-transform active:scale-[0.97]"
@@ -168,9 +169,9 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                   }
                 >
                   <span className="flex w-10 shrink-0 flex-col items-center gap-1">
-                    <span className="text-[24px] font-bold text-text">{weekday}</span>
+                    <span className={`${lang === 'en' ? 'text-[16px]' : 'text-[24px]'} max-w-full truncate font-bold text-text`}>{weekday}</span>
                     <span className="text-xs text-muted tabular-nums">
-                      {day.date.getMonth() + 1}/{day.date.getDate()}
+                      {formatDate(day.date, { month: 'numeric', day: 'numeric' })}
                     </span>
                     <ChevronDown
                       aria-hidden="true"
@@ -180,19 +181,19 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                   </span>
                   <span className="flex min-w-0 flex-1 flex-wrap gap-2">
                     {day.cardioPlanId !== null && (
-                      <span className="rounded-[12px] bg-fit/10 px-3 py-2 text-xs font-medium leading-5 text-fit">
-                        {cardioPlan
-                          ? `${cardioPlan.name} · ${cardioPlan.minutes} 分`
-                          : '找不到有氧課表'}
+                      <span className="max-w-full truncate rounded-[12px] bg-fit/10 px-3 py-2 text-xs font-medium leading-5 text-fit">
+                        {translatedCardio
+                          ? `${translatedCardio.name} · ${t('unit.minuteShort', { count: translatedCardio.minutes })}`
+                          : t('weekly.cardioMissing')}
                       </span>
                     )}
                     {day.strengthFocus !== null && (
-                      <span className="rounded-[12px] bg-surface-2 px-3 py-2 text-xs font-medium text-text">
-                        {strengthLabels[day.strengthFocus]}
+                      <span className="max-w-full truncate rounded-[12px] bg-surface-2 px-3 py-2 text-xs font-medium text-text">
+                        {t(strengthLabels[day.strengthFocus])}
                       </span>
                     )}
                     {day.isRestDay && (
-                      <span className="text-[15px] text-muted">休息日</span>
+                      <span className="truncate text-[15px] text-muted">{t('weekly.restDay')}</span>
                     )}
                   </span>
                 </button>
@@ -200,7 +201,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                 {!day.isRestDay && (
                   <button
                     type="button"
-                    aria-label={`星期${weekday} ${day.date.getMonth() + 1}/${day.date.getDate()}訓練完成`}
+                    aria-label={t('weekly.completeLabel', { date: formatDate(day.date) })}
                     aria-pressed={completed}
                     className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-[0.97] ${
                       completed
@@ -218,17 +219,17 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                 <div className="mt-4 space-y-4 border-t border-line pt-4">
                   {day.cardioPlanId !== null && (
                     <section className="space-y-3">
-                      <h3 className="text-[15px] font-semibold text-fit">有氧訓練</h3>
-                      {cardioPlan ? (
+                      <h3 className="text-[15px] font-semibold text-fit">{t('weekly.cardioHeading')}</h3>
+                      {translatedCardio ? (
                         <ol>
-                          {cardioPlan.steps.map((step, index) => (
+                          {translatedCardio.steps.map((step, index) => (
                             <li
-                              key={`${cardioPlan.id}-${index}`}
+                              key={`${translatedCardio.id}-${index}`}
                               className="relative flex gap-3 pb-4 last:pb-0"
                             >
                               <span className="relative flex w-3 shrink-0 justify-center">
                                 <span className="relative z-10 mt-2 h-2 w-2 rounded-full bg-fit" />
-                                {index < cardioPlan.steps.length - 1 && (
+                                {index < translatedCardio.steps.length - 1 && (
                                   <span className="absolute top-3 -bottom-3 w-px bg-fit/30" />
                                 )}
                               </span>
@@ -239,7 +240,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                           ))}
                         </ol>
                       ) : (
-                        <p className="text-sm text-muted">找不到此有氧課表。</p>
+                        <p className="text-sm text-muted">{t('weekly.cardioMissingDetail')}</p>
                       )}
                     </section>
                   )}
@@ -247,7 +248,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                   {day.strengthFocus !== null && (
                     <section className="space-y-3">
                       <h3 className="text-[15px] font-semibold text-text">
-                        {strengthLabels[day.strengthFocus]}
+                        {t(strengthLabels[day.strengthFocus])}
                       </h3>
                       {strengthPlan ? (
                         <ul className="divide-y divide-line">
@@ -256,28 +257,28 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                               key={`${strengthPlan.id}-${index}`}
                               className="flex items-start justify-between gap-3 py-3"
                             >
-                              <p className="min-w-0 flex-1 text-[15px] font-medium text-text">
-                                {exercise.name}
+                              <p className="min-w-0 flex-1 break-words text-[15px] font-medium text-text">
+                                {tExercise(exercise.name)}
                               </p>
                               <div className="w-24 shrink-0 text-right">
                                 <p className="text-[15px] font-bold text-text tabular-nums">
-                                  {exercise.sets} × {exercise.reps}
+                                  {exercise.sets} × {tExercise(exercise.reps)}
                                 </p>
                                 <p className="mt-1 text-xs text-muted tabular-nums">
-                                  休息 {exercise.restSec} 秒
+                                  {t('strength.rest', { count: exercise.restSec })}
                                 </p>
                               </div>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-muted">找不到此重訓課表。</p>
+                        <p className="text-sm text-muted">{t('weekly.strengthMissing')}</p>
                       )}
                     </section>
                   )}
 
                   {day.isRestDay && (
-                    <p className="text-[15px] text-muted">休息日，今天沒有安排訓練。</p>
+                    <p className="text-[15px] text-muted">{t('weekly.restDetail')}</p>
                   )}
                 </div>
               </div>
@@ -286,7 +287,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
         })}
       </div>
 
-      <p className="text-xs text-muted">排程為範本，請依個人體能調整</p>
+      <p className="text-xs text-muted">{t('weekly.disclaimer')}</p>
     </div>
   );
 }

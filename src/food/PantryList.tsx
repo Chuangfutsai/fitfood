@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import type { AppData, IngredientCategory } from '../types';
 import { Card } from '../ui/Card';
 import { Sheet } from '../ui/Sheet';
+import { useLang } from '../i18n/LanguageContext';
 
 interface PantryListProps {
   data: AppData;
@@ -13,13 +14,14 @@ const categoryGroups: {
   category: IngredientCategory;
   label: string;
 }[] = [
-  { category: 'protein', label: '蛋白質' },
-  { category: 'veg', label: '蔬菜' },
-  { category: 'carb', label: '主食' },
-  { category: 'other', label: '調味配料' },
+  { category: 'protein', label: 'category.protein' },
+  { category: 'veg', label: 'category.veg' },
+  { category: 'carb', label: 'category.carb' },
+  { category: 'other', label: 'category.other' },
 ];
 
 export function PantryList({ data, setData }: PantryListProps) {
+  const { t, tIngredient } = useLang();
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<IngredientCategory>('protein');
@@ -79,7 +81,7 @@ export function PantryList({ data, setData }: PantryListProps) {
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted">
-        有庫存 {inStockCount} / 共 {data.ingredients.length} 項
+        {t('pantry.stockCount', { count: inStockCount, total: data.ingredients.length })}
       </p>
 
       {categoryGroups.map((group) => {
@@ -89,23 +91,23 @@ export function PantryList({ data, setData }: PantryListProps) {
 
         return (
           <section key={group.category} className="space-y-2">
-            <h2 className="text-sm font-semibold text-text">{group.label}</h2>
+            <h2 className="text-sm font-semibold text-text">{t(group.label)}</h2>
             <Card className="shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
               <div className="divide-y divide-line">
                 {ingredients.length === 0 ? (
-                  <p className="py-3 text-sm text-muted">尚無食材</p>
+                  <p className="py-3 text-sm text-muted">{t('pantry.empty')}</p>
                 ) : (
                   ingredients.map((ingredient) => (
                     <div
                       key={ingredient.id}
                       className="flex min-h-11 items-center gap-3 py-2"
                     >
-                      <p className="min-w-0 flex-1 text-[15px] text-text">
-                        {ingredient.name}
+                      <p className="min-w-0 flex-1 truncate text-[15px] text-text">
+                        {tIngredient(ingredient)}
                       </p>
                       <button
                         type="button"
-                        aria-label={`刪除${ingredient.name}`}
+                        aria-label={t('pantry.delete', { name: tIngredient(ingredient) })}
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-muted transition-transform active:scale-[0.97]"
                         onClick={() => deleteIngredient(ingredient.id)}
                       >
@@ -113,7 +115,7 @@ export function PantryList({ data, setData }: PantryListProps) {
                       </button>
                       <button
                         type="button"
-                        aria-label={`${ingredient.name}庫存狀態`}
+                        aria-label={t('pantry.stockStatus', { name: tIngredient(ingredient) })}
                         aria-pressed={ingredient.inStock}
                         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
                           ingredient.inStock ? 'bg-food' : 'bg-surface-2'
@@ -139,31 +141,31 @@ export function PantryList({ data, setData }: PantryListProps) {
 
       <button
         type="button"
-        className="flex h-12 w-full items-center justify-center rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+        className="flex h-12 w-full items-center justify-center truncate rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97]"
         onClick={() => setIsAdding(true)}
       >
-        ＋ 新增食材
+        {t('pantry.addButton')}
       </button>
 
       <Sheet
         open={isAdding}
         onClose={() => setIsAdding(false)}
-        title="新增食材"
+        title={t('pantry.addTitle')}
       >
         <div className="space-y-5">
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-text">名稱</span>
+            <span className="text-sm font-medium text-text">{t('common.name')}</span>
             <input
               type="text"
               value={name}
-              placeholder="例如：雞胸肉"
+              placeholder={t('pantry.namePlaceholder')}
               className="h-12 w-full rounded-[14px] border border-line bg-bg px-4 text-[15px] text-text outline-none placeholder:text-muted"
               onChange={(event) => setName(event.target.value)}
             />
           </label>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium text-text">類別</p>
+            <p className="text-sm font-medium text-text">{t('pantry.category')}</p>
             <div className="grid grid-cols-2 gap-2">
               {categoryGroups.map((group) => {
                 const selected = category === group.category;
@@ -172,14 +174,14 @@ export function PantryList({ data, setData }: PantryListProps) {
                   <button
                     key={group.category}
                     type="button"
-                    className={`h-11 rounded-[14px] border text-sm font-medium transition-transform active:scale-[0.97] ${
+                    className={`h-11 min-w-0 truncate rounded-[14px] border px-2 text-sm font-medium transition-transform active:scale-[0.97] ${
                       selected
                         ? 'border-food bg-food text-white'
                         : 'border-line bg-surface-2 text-muted'
                     }`}
                     onClick={() => setCategory(group.category)}
                   >
-                    {group.label}
+                    {t(group.label)}
                   </button>
                 );
               })}
@@ -192,7 +194,7 @@ export function PantryList({ data, setData }: PantryListProps) {
             disabled={!name.trim()}
             onClick={addIngredient}
           >
-            加入
+            {t('common.add')}
           </button>
         </div>
       </Sheet>

@@ -15,6 +15,7 @@ import { Sheet } from '../ui/Sheet';
 import { DishList } from './DishList';
 import { PantryList } from './PantryList';
 import { Wheel } from './Wheel';
+import { LanguageButton, useLang } from '../i18n/LanguageContext';
 
 interface FoodPageProps {
   data: AppData;
@@ -30,15 +31,15 @@ interface DishImageProps {
 type ComboResult = Record<'protein' | 'veg' | 'carb', Ingredient | null>;
 
 const foodTabs = [
-  { value: 'wheel', label: '轉盤' },
-  { value: 'pantry', label: '食材' },
-  { value: 'dishes', label: '菜單' },
+  { value: 'wheel', label: 'food.tab.wheel' },
+  { value: 'pantry', label: 'food.tab.pantry' },
+  { value: 'dishes', label: 'food.tab.dishes' },
 ];
 
 const comboLabels = {
-  protein: '蛋白質',
-  veg: '蔬菜',
-  carb: '主食',
+  protein: 'category.protein',
+  veg: 'category.veg',
+  carb: 'category.carb',
 };
 
 function DishImage({ id, name, className }: DishImageProps) {
@@ -65,31 +66,24 @@ function DishImage({ id, name, className }: DishImageProps) {
 }
 
 function HeroCard({ count }: { count: number }) {
+  const { lang, t, formatDate } = useLang();
   const [hasError, setHasError] = useState(false);
   const now = new Date();
   const hour = now.getHours();
-  const weekdays = [
-    '星期日',
-    '星期一',
-    '星期二',
-    '星期三',
-    '星期四',
-    '星期五',
-    '星期六',
-  ];
-  const dateLabel = `${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`;
+  const dateLabel = formatDate(now);
   const greeting =
     hour >= 5 && hour < 11
-      ? '早安'
+      ? t('greeting.morning')
       : hour >= 11 && hour < 14
-        ? '午安'
+        ? t('greeting.noon')
         : hour >= 14 && hour < 18
-          ? '下午好'
-          : '晚安';
+          ? t('greeting.afternoon')
+          : t('greeting.evening');
 
   if (hasError) {
     return (
       <section className="relative isolate h-[200px] w-full overflow-hidden rounded-[24px] bg-food/10">
+        <LanguageButton accent="food" SheetComponent={Sheet} />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <motion.div
             className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-tomato"
@@ -114,20 +108,20 @@ function HeroCard({ count }: { count: number }) {
           </motion.div>
         </div>
 
-        <div className="absolute left-5 top-5 z-10">
+        <div className="absolute left-5 top-5 z-10 max-w-[calc(100%-88px)]">
           <p className="text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
-          <p className="mt-2 text-sm leading-5 text-text">
-            {greeting}，今天吃什麼？
+          <p className="mt-2 truncate text-sm leading-5 text-text">
+            {t('food.hero.greeting', { greeting })}
           </p>
         </div>
 
         <div className="absolute bottom-5 left-5 z-10 max-w-[60%]">
-          <h1 className="text-[28px] font-extrabold leading-8 text-text">
-            <span className="block">轉一下，</span>
-            <span className="block">交給命運</span>
+          <h1 className={`${lang === 'en' ? 'text-[24px]' : 'text-[28px]'} font-extrabold leading-8 text-text`}>
+            <span className="block">{t('food.hero.titleFirst')}</span>
+            <span className="block">{t('food.hero.titleSecond')}</span>
           </h1>
-          <span className="mt-2 inline-flex rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-food tabular-nums">
-            現在可做 {count} 道菜
+          <span className="mt-2 inline-block max-w-full truncate rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-food tabular-nums">
+            {t('food.hero.available', { count })}
           </span>
         </div>
       </section>
@@ -136,17 +130,18 @@ function HeroCard({ count }: { count: number }) {
 
   return (
     <section className="relative h-[200px] overflow-hidden rounded-[24px]">
+      <LanguageButton accent="food" SheetComponent={Sheet} />
       <img
         src="/dishes/hero.jpg"
-        alt="今日料理"
+        alt={t('food.hero.alt')}
         className="h-full w-full object-cover"
         onError={() => setHasError(true)}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
-      <div className="absolute bottom-5 left-5">
-        <p className="text-sm text-white">今天吃什麼？</p>
-        <h1 className="text-[28px] font-extrabold text-white">
-          轉一下，交給命運
+      <div className="absolute bottom-5 left-5 max-w-[calc(100%-40px)]">
+        <p className="text-sm text-white">{t('food.hero.question')}</p>
+        <h1 className={`${lang === 'en' ? 'text-[24px]' : 'text-[28px]'} font-extrabold text-white`}>
+          {t('food.hero.title')}
         </h1>
       </div>
     </section>
@@ -154,6 +149,7 @@ function HeroCard({ count }: { count: number }) {
 }
 
 export function FoodPage({ data, setData }: FoodPageProps) {
+  const { t, tDish, tIngredient } = useLang();
   const [activeTab, setActiveTab] = useState('wheel');
   const [wheelMode, setWheelMode] = useState<'dish' | 'combo'>('dish');
   const [shuffleKey, setShuffleKey] = useState(0);
@@ -222,7 +218,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
       <HeroCard count={availableDishes.length} />
 
       <SegmentedTabs
-        options={foodTabs}
+        options={foodTabs.map((tab) => ({ ...tab, label: t(tab.label) }))}
         value={activeTab}
         onChange={setActiveTab}
         accent="food"
@@ -239,25 +235,25 @@ export function FoodPage({ data, setData }: FoodPageProps) {
           <div className="grid grid-cols-2 gap-2 rounded-full bg-surface-2 p-1">
             <button
               type="button"
-              className={`h-11 rounded-full text-sm font-semibold transition-transform active:scale-[0.97] ${
+              className={`h-11 min-w-0 truncate rounded-full px-2 text-sm font-semibold transition-transform active:scale-[0.97] ${
                 wheelMode === 'dish'
                   ? 'bg-food text-white'
                   : 'border border-line bg-surface text-muted'
               }`}
               onClick={() => setWheelMode('dish')}
             >
-              抽菜色
+              {t('food.mode.dish')}
             </button>
             <button
               type="button"
-              className={`h-11 rounded-full text-sm font-semibold transition-transform active:scale-[0.97] ${
+              className={`h-11 min-w-0 truncate rounded-full px-2 text-sm font-semibold transition-transform active:scale-[0.97] ${
                 wheelMode === 'combo'
                   ? 'bg-food text-white'
                   : 'border border-line bg-surface text-muted'
               }`}
               onClick={() => setWheelMode('combo')}
             >
-              抽組合
+              {t('food.mode.combo')}
             </button>
           </div>
 
@@ -267,8 +263,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs text-muted">
-                      從 {availableDishes.length} 道可做的菜中隨機選{' '}
-                      {wheelDishes.length} 道
+                      {t('food.wheel.selection', { count: availableDishes.length, selected: wheelDishes.length })}
                     </p>
                     <button
                       type="button"
@@ -276,13 +271,13 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                       onClick={shuffleWheel}
                     >
                       <Shuffle size={16} />
-                      重新洗牌
+                      <span className="truncate">{t('food.wheel.shuffle')}</span>
                     </button>
                   </div>
                   <Wheel
                     items={wheelDishes.map((dish) => ({
                       id: dish.id,
-                      label: dish.name,
+                      label: tDish(dish),
                     }))}
                     onResult={setResultDishId}
                   />
@@ -290,14 +285,14 @@ export function FoodPage({ data, setData }: FoodPageProps) {
               ) : (
                 <Card className="space-y-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
                   <p className="text-[15px] font-medium text-text">
-                    現有食材能做的菜不夠
+                    {t('food.wheel.empty')}
                   </p>
                   <button
                     type="button"
                     className="h-11 rounded-[14px] bg-food px-4 text-sm font-semibold text-white transition-transform active:scale-[0.97]"
                     onClick={() => setActiveTab('pantry')}
                   >
-                    去勾選食材
+                    {t('food.wheel.pantry')}
                   </button>
                 </Card>
               )}
@@ -311,7 +306,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                 className="h-12 w-full rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97]"
                 onClick={drawCombo}
               >
-                抽一組
+                {t('food.combo.draw')}
               </button>
 
               {comboResult && (
@@ -326,15 +321,15 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                         key={category}
                         className="min-w-0 p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
                       >
-                        <p className="mb-2 text-xs text-muted">
-                          {comboLabels[category]}
+                        <p className="mb-2 truncate text-xs text-muted">
+                          {t(comboLabels[category])}
                         </p>
                         <p
                           className={`break-words text-[15px] font-bold ${
                             ingredient ? 'text-text' : 'text-muted'
                           }`}
                         >
-                          {ingredient?.name ?? '沒有庫存'}
+                          {ingredient ? tIngredient(ingredient) : t('food.combo.empty')}
                         </p>
                       </Card>
                     );
@@ -349,23 +344,23 @@ export function FoodPage({ data, setData }: FoodPageProps) {
       <Sheet
         open={resultDish !== null}
         onClose={() => setResultDishId(null)}
-        title="抽菜色結果"
+        title={t('food.result.title')}
       >
         {resultDish && (
           <div className="space-y-5">
             <DishImage
               key={resultDish.id}
               id={resultDish.id}
-              name={resultDish.name}
+              name={tDish(resultDish)}
               className="aspect-square w-full rounded-[20px]"
             />
             <div className="space-y-2">
               <h2 className="text-[24px] font-bold text-text">
-                {resultDish.name}
+                {tDish(resultDish)}
               </h2>
               <p className="flex items-center gap-1 text-sm text-muted">
                 <Clock size={16} />
-                {resultDish.minutes} 分鐘
+                {t('unit.minutes', { count: resultDish.minutes })}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -381,9 +376,9 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                 return (
                   <span
                     key={ingredient.id}
-                    className="rounded-full bg-food/10 px-3 py-2 text-sm text-food"
+                    className="max-w-full truncate rounded-full bg-food/10 px-3 py-2 text-sm text-food"
                   >
-                    {ingredient.name}
+                    {tIngredient(ingredient)}
                   </span>
                 );
               })}
@@ -391,17 +386,17 @@ export function FoodPage({ data, setData }: FoodPageProps) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className="h-12 rounded-[14px] border border-line bg-surface text-sm font-semibold text-text transition-transform active:scale-[0.97]"
+                className="h-12 min-w-0 truncate rounded-[14px] border border-line bg-surface px-2 text-sm font-semibold text-text transition-transform active:scale-[0.97]"
                 onClick={() => setResultDishId(null)}
               >
-                再轉一次
+                {t('food.result.again')}
               </button>
               <button
                 type="button"
-                className="h-12 rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+                className="h-12 min-w-0 truncate rounded-[14px] bg-food px-2 text-sm font-semibold text-white transition-transform active:scale-[0.97]"
                 onClick={() => setResultDishId(null)}
               >
-                就吃這個
+                {t('food.result.accept')}
               </button>
             </div>
           </div>

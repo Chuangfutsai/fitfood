@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useLang } from '../i18n/LanguageContext';
 
 interface SheetProps {
   open: boolean;
@@ -10,13 +11,14 @@ interface SheetProps {
 }
 
 export function Sheet({ open, onClose, title, children }: SheetProps) {
+  const { t } = useLang();
   return (
     <AnimatePresence>
       {open && (
         <>
           <motion.button
             type="button"
-            aria-label="關閉面板"
+            aria-label={t('common.closeSheet')}
             className="fixed inset-0 z-40 bg-bg/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -34,10 +36,10 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             transition={{ type: 'spring', stiffness: 360, damping: 32 }}
           >
             <div className="mb-5 flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-text">{title}</h2>
+              <h2 className="min-w-0 truncate text-xl font-bold text-text">{title}</h2>
               <button
                 type="button"
-                aria-label="關閉"
+                aria-label={t('common.close')}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-muted transition-transform active:scale-[0.97]"
                 onClick={onClose}
               >

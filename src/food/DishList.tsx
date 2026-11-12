@@ -7,6 +7,7 @@ import {
 import type { AppData, Dish, IngredientCategory } from '../types';
 import { Card } from '../ui/Card';
 import { Sheet } from '../ui/Sheet';
+import { useLang } from '../i18n/LanguageContext';
 
 interface DishListProps {
   data: AppData;
@@ -17,10 +18,10 @@ const categoryGroups: {
   category: IngredientCategory;
   label: string;
 }[] = [
-  { category: 'protein', label: '蛋白質' },
-  { category: 'veg', label: '蔬菜' },
-  { category: 'carb', label: '主食' },
-  { category: 'other', label: '調味配料' },
+  { category: 'protein', label: 'category.protein' },
+  { category: 'veg', label: 'category.veg' },
+  { category: 'carb', label: 'category.carb' },
+  { category: 'other', label: 'category.other' },
 ];
 
 interface DishImageProps {
@@ -29,6 +30,7 @@ interface DishImageProps {
 }
 
 function DishImage({ dish, className }: DishImageProps) {
+  const { tDish } = useLang();
   const [hasError, setHasError] = useState(false);
 
   if (hasError) {
@@ -44,7 +46,7 @@ function DishImage({ dish, className }: DishImageProps) {
   return (
     <img
       src={`/dishes/${dish.id}.jpg`}
-      alt={dish.name}
+      alt={tDish(dish)}
       className={`object-cover ${className}`}
       onError={() => setHasError(true)}
     />
@@ -52,6 +54,7 @@ function DishImage({ dish, className }: DishImageProps) {
 }
 
 export function DishList({ data, setData }: DishListProps) {
+  const { t, tDish, tIngredient } = useLang();
   const [query, setQuery] = useState('');
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -67,6 +70,7 @@ export function DishList({ data, setData }: DishListProps) {
   );
 
   const filteredDishes = data.dishes.filter((dish) =>
+    tDish(dish).toLocaleLowerCase().includes(query.toLocaleLowerCase()) ||
     dish.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
   );
 
@@ -126,14 +130,14 @@ export function DishList({ data, setData }: DishListProps) {
         <input
           type="search"
           value={query}
-          placeholder="搜尋菜色"
+          placeholder={t('dishes.search')}
           className="h-12 w-full rounded-[14px] border border-line bg-surface py-3 pl-11 pr-4 text-[15px] text-text shadow-[0_8px_24px_rgba(15,23,42,0.06)] outline-none placeholder:text-muted"
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
 
       {filteredDishes.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">找不到菜色</p>
+        <p className="py-8 text-center text-sm text-muted">{t('dishes.empty')}</p>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filteredDishes.map((dish) => {
@@ -149,8 +153,8 @@ export function DishList({ data, setData }: DishListProps) {
                 onClick={() => setSelectedDish(dish)}
               >
                 {missingIngredient && (
-                  <span className="absolute right-3 top-3 z-10 rounded-full bg-surface-2 px-2 py-1 text-xs text-muted">
-                    缺食材
+                  <span className="absolute right-3 top-3 z-10 max-w-[calc(100%-24px)] truncate rounded-full bg-surface-2 px-2 py-1 text-xs text-muted">
+                    {t('dishes.missing')}
                   </span>
                 )}
                 <Card className="h-full shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
@@ -160,11 +164,11 @@ export function DishList({ data, setData }: DishListProps) {
                   />
                   <div className="space-y-2 pt-3">
                     <h2 className="line-clamp-2 text-[15px] font-bold text-text">
-                      {dish.name}
+                      {tDish(dish)}
                     </h2>
                     <p className="flex items-center gap-1 text-xs text-muted">
                       <Clock size={14} />
-                      {dish.minutes} 分鐘
+                      {t('unit.minutes', { count: dish.minutes })}
                     </p>
                   </div>
                 </Card>
@@ -179,13 +183,13 @@ export function DishList({ data, setData }: DishListProps) {
         className="flex h-12 w-full items-center justify-center rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97]"
         onClick={() => setIsAdding(true)}
       >
-        ＋ 新增菜色
+        {t('dishes.addButton')}
       </button>
 
       <Sheet
         open={selectedDish !== null}
         onClose={() => setSelectedDish(null)}
-        title={selectedDish?.name ?? '菜色詳情'}
+        title={selectedDish ? tDish(selectedDish) : t('dishes.details')}
       >
         {selectedDish && (
           <div className="space-y-5">
@@ -195,11 +199,11 @@ export function DishList({ data, setData }: DishListProps) {
             />
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-text">
-                {selectedDish.name}
+                {tDish(selectedDish)}
               </h3>
               <p className="flex items-center gap-1 text-sm text-muted">
                 <Clock size={16} />
-                {selectedDish.minutes} 分鐘
+                {t('unit.minutes', { count: selectedDish.minutes })}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -210,13 +214,13 @@ export function DishList({ data, setData }: DishListProps) {
                 return (
                   <span
                     key={ingredientId}
-                    className={`rounded-full px-3 py-2 text-sm ${
+                    className={`max-w-full truncate rounded-full px-3 py-2 text-sm ${
                       inStock
                         ? 'bg-food/10 text-food'
                         : 'bg-surface-2 text-muted line-through'
                     }`}
                   >
-                    {ingredient?.name ?? '已刪除食材'}
+                    {ingredient ? tIngredient(ingredient) : t('dishes.deletedIngredient')}
                   </span>
                 );
               })}
@@ -226,7 +230,7 @@ export function DishList({ data, setData }: DishListProps) {
               className="h-11 text-sm font-medium text-muted underline transition-transform active:scale-[0.97]"
               onClick={() => deleteDish(selectedDish.id)}
             >
-              刪除這道菜
+              {t('dishes.delete')}
             </button>
           </div>
         )}
@@ -235,22 +239,22 @@ export function DishList({ data, setData }: DishListProps) {
       <Sheet
         open={isAdding}
         onClose={() => setIsAdding(false)}
-        title="新增菜色"
+        title={t('dishes.addTitle')}
       >
         <div className="space-y-5">
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-text">菜名</span>
+            <span className="text-sm font-medium text-text">{t('dishes.name')}</span>
             <input
               type="text"
               value={name}
-              placeholder="例如：番茄炒蛋"
+              placeholder={t('dishes.namePlaceholder')}
               className="h-12 w-full rounded-[14px] border border-line bg-bg px-4 text-[15px] text-text outline-none placeholder:text-muted"
               onChange={(event) => setName(event.target.value)}
             />
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-text">烹飪時間</span>
+            <span className="text-sm font-medium text-text">{t('dishes.cookingTime')}</span>
             <input
               type="number"
               min="1"
@@ -261,7 +265,7 @@ export function DishList({ data, setData }: DishListProps) {
           </label>
 
           <div className="space-y-4">
-            <p className="text-sm font-medium text-text">食材</p>
+            <p className="text-sm font-medium text-text">{t('dishes.ingredients')}</p>
             {categoryGroups.map((group) => {
               const ingredients = data.ingredients.filter(
                 (ingredient) => ingredient.category === group.category,
@@ -274,7 +278,7 @@ export function DishList({ data, setData }: DishListProps) {
               return (
                 <section key={group.category} className="space-y-2">
                   <h3 className="text-xs font-medium text-muted">
-                    {group.label}
+                    {t(group.label)}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {ingredients.map((ingredient) => {
@@ -286,14 +290,14 @@ export function DishList({ data, setData }: DishListProps) {
                         <button
                           key={ingredient.id}
                           type="button"
-                          className={`min-h-11 rounded-full border px-3 py-2 text-sm transition-transform active:scale-[0.97] ${
+                          className={`min-h-11 max-w-full truncate rounded-full border px-3 py-2 text-sm transition-transform active:scale-[0.97] ${
                             selected
                               ? 'border-food bg-food text-white'
                               : 'border-line bg-surface-2 text-muted'
                           }`}
                           onClick={() => toggleIngredient(ingredient.id)}
                         >
-                          {ingredient.name}
+                          {tIngredient(ingredient)}
                         </button>
                       );
                     })}
@@ -309,7 +313,7 @@ export function DishList({ data, setData }: DishListProps) {
             disabled={!name.trim() || selectedIngredientIds.length === 0}
             onClick={addDish}
           >
-            加入
+            {t('common.add')}
           </button>
         </div>
       </Sheet>

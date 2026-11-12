@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { AppData, CardioMachine } from '../types';
 import { Card } from '../ui/Card';
+import { useLang } from '../i18n/LanguageContext';
 
 interface CardioPanelProps {
   data: AppData;
@@ -18,9 +19,10 @@ interface MachineImageProps {
 }
 
 function MachineImage({ machine, className }: MachineImageProps) {
+  const { t } = useLang();
   const [hasError, setHasError] = useState(false);
   const Icon = machine === 'treadmill' ? Footprints : TrendingUp;
-  const name = machine === 'treadmill' ? '跑步機' : '爬樓機';
+  const name = t(`cardio.machine.${machine}`);
 
   if (hasError) {
     return (
@@ -43,6 +45,7 @@ function MachineImage({ machine, className }: MachineImageProps) {
 }
 
 export function CardioPanel(_props: CardioPanelProps) {
+  const { t, tCardio } = useLang();
   const { data } = _props;
   const [machine, setMachine] = useState<CardioMachine>('treadmill');
   const [recommendedId, setRecommendedId] = useState<string | null>(null);
@@ -73,8 +76,7 @@ export function CardioPanel(_props: CardioPanelProps) {
         {(['treadmill', 'stairclimber'] as CardioMachine[]).map(
           (machineOption) => {
             const selected = machine === machineOption;
-            const label =
-              machineOption === 'treadmill' ? '跑步機' : '爬樓機';
+            const label = t(`cardio.machine.${machineOption}`);
 
             return (
               <button
@@ -92,7 +94,7 @@ export function CardioPanel(_props: CardioPanelProps) {
                     machine={machineOption}
                     className="aspect-square w-full rounded-[14px]"
                   />
-                  <p className="pt-3 text-center text-[15px] font-semibold text-text">
+                  <p className="truncate pt-3 text-center text-[15px] font-semibold text-text">
                     {label}
                   </p>
                 </Card>
@@ -108,12 +110,13 @@ export function CardioPanel(_props: CardioPanelProps) {
         onClick={recommendPlan}
       >
         <Sparkles size={18} />
-        今日推薦
+        <span className="truncate">{t('cardio.recommend')}</span>
       </button>
 
       <div className="space-y-3">
         {plans.map((plan) => {
           const recommended = plan.id === recommendedId;
+          const translatedPlan = tCardio(plan);
 
           return (
             <div
@@ -128,25 +131,25 @@ export function CardioPanel(_props: CardioPanelProps) {
                 }`}
               >
                 {recommended && (
-                  <span className="absolute right-4 top-4 rounded-full bg-fit/10 px-2 py-1 text-xs font-medium text-fit">
-                    今日推薦
+                  <span className="absolute right-4 top-4 max-w-[calc(100%-32px)] truncate rounded-full bg-fit/10 px-2 py-1 text-xs font-medium text-fit">
+                    {t('fitness.recommended')}
                   </span>
                 )}
 
-                <div className="mb-5 flex items-start justify-between gap-3">
-                  <h2 className="pr-2 text-[17px] font-bold text-text">
-                    {plan.name}
+                <div className={`mb-5 flex items-start justify-between gap-3 ${recommended ? 'pt-7' : ''}`}>
+                  <h2 className="min-w-0 break-words pr-2 text-[17px] font-bold text-text">
+                    {translatedPlan.name}
                   </h2>
                   <div className="shrink-0 text-right">
                     <span className="tabular text-[28px] font-extrabold text-fit">
                       {plan.minutes}
                     </span>
-                    <span className="ml-1 text-xs text-muted">分鐘</span>
+                    <span className="ml-1 text-xs text-muted">{t('unit.minutesLabel')}</span>
                   </div>
                 </div>
 
                 <div className="space-y-0">
-                  {plan.steps.map((step, index) => {
+                  {translatedPlan.steps.map((step, index) => {
                     const isLast = index === plan.steps.length - 1;
 
                     return (
@@ -170,7 +173,7 @@ export function CardioPanel(_props: CardioPanelProps) {
         })}
       </div>
 
-      <p className="text-xs text-muted">數值為範本，請依個人體能調整</p>
+      <p className="text-xs text-muted">{t('fitness.disclaimer')}</p>
     </div>
   );
 }

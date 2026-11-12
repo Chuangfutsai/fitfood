@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { Dumbbell, Footprints, Timer } from 'lucide-react';
 import type { AppData } from '../types';
 import { SegmentedTabs } from '../ui/SegmentedTabs';
+import { Sheet } from '../ui/Sheet';
 import { CardioPanel } from './CardioPanel';
 import { StrengthPanel } from './StrengthPanel';
 import { WeeklyPanel } from './WeeklyPanel';
+import { LanguageButton, useLang } from '../i18n/LanguageContext';
 
 interface FitnessPageProps {
   data: AppData;
@@ -13,37 +15,30 @@ interface FitnessPageProps {
 }
 
 const fitnessTabs = [
-  { value: 'weekly', label: '本週' },
-  { value: 'cardio', label: '有氧' },
-  { value: 'strength', label: '無氧' },
+  { value: 'weekly', label: 'fitness.tabs.weekly' },
+  { value: 'cardio', label: 'fitness.tabs.cardio' },
+  { value: 'strength', label: 'fitness.tabs.strength' },
 ];
 
 function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
+  const { lang, t, formatDate } = useLang();
   const [hasError, setHasError] = useState(false);
   const now = new Date();
   const hour = now.getHours();
-  const weekdays = [
-    '星期日',
-    '星期一',
-    '星期二',
-    '星期三',
-    '星期四',
-    '星期五',
-    '星期六',
-  ];
-  const dateLabel = `${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`;
+  const dateLabel = formatDate(now);
   const greeting =
     hour >= 5 && hour < 11
-      ? '早安'
+      ? t('greeting.morning')
       : hour >= 11 && hour < 14
-        ? '午安'
+        ? t('greeting.noon')
         : hour >= 14 && hour < 18
-          ? '下午好'
-          : '晚安';
+          ? t('greeting.afternoon')
+          : t('greeting.evening');
 
   if (hasError) {
     return (
       <section className="relative isolate h-[200px] w-full overflow-hidden rounded-[24px] bg-fit/10">
+        <LanguageButton accent="fit" SheetComponent={Sheet} />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <motion.div
             className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-carrot"
@@ -68,20 +63,20 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
           </motion.div>
         </div>
 
-        <div className="absolute left-5 top-5 z-10">
-          <p className="text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
-          <p className="mt-2 text-sm leading-5 text-text">
-            {greeting}，今天練什麼？
+        <div className="absolute left-5 right-[68px] top-5 z-10">
+          <p className="truncate text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
+          <p className="mt-2 truncate text-sm leading-5 text-text">
+            {t('fitness.hero.greeting', { greeting })}
           </p>
         </div>
 
         <div className="absolute bottom-5 left-5 z-10 max-w-[60%]">
-          <h1 className="text-[28px] font-extrabold leading-8 text-text">
-            <span className="block">動起來，</span>
-            <span className="block">比昨天更好</span>
+          <h1 className={`${lang === 'en' ? 'text-[24px]' : 'text-[28px]'} font-extrabold leading-8 text-text`}>
+            <span className="block">{t('fitness.hero.titleLine1')}</span>
+            <span className="block">{t('fitness.hero.titleLine2')}</span>
           </h1>
-          <span className="mt-2 inline-flex rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-fit">
-            下一次重訓：{nextFocusLabel}
+          <span className="mt-2 inline-block max-w-full truncate rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-fit">
+            {t('fitness.hero.nextStrength', { focus: nextFocusLabel })}
           </span>
         </div>
       </section>
@@ -90,17 +85,18 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
 
   return (
     <section className="relative h-[200px] overflow-hidden rounded-[24px]">
+      <LanguageButton accent="fit" SheetComponent={Sheet} />
       <img
         src="/dishes/hero-fitness.jpg"
-        alt="今日健身"
+        alt={t('fitness.hero.imageAlt')}
         className="h-full w-full object-cover"
         onError={() => setHasError(true)}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
-      <div className="absolute bottom-5 left-5">
-        <p className="text-sm text-white">今天練什麼？</p>
-        <h1 className="text-[28px] font-extrabold text-white">
-          動起來，比昨天更好
+      <div className="absolute bottom-5 left-5 right-5">
+        <p className="text-sm text-white">{t('fitness.hero.subtitle')}</p>
+        <h1 className={`${lang === 'en' ? 'text-[24px]' : 'text-[28px]'} font-extrabold text-white`}>
+          {t('fitness.hero.title')}
         </h1>
       </div>
     </section>
@@ -108,6 +104,7 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
 }
 
 export function FitnessPage({ data, setData }: FitnessPageProps) {
+  const { t } = useLang();
   const [activeTab, setActiveTab] = useState('weekly');
 
   return (
@@ -115,15 +112,15 @@ export function FitnessPage({ data, setData }: FitnessPageProps) {
       <HeroCard
         nextFocusLabel={
           data.lastStrengthFocus === 'push'
-            ? '拉'
+            ? t('strength.focus.pull')
             : data.lastStrengthFocus === 'pull'
-              ? '腿'
-              : '推'
+              ? t('strength.focus.legs')
+              : t('strength.focus.push')
         }
       />
 
       <SegmentedTabs
-        options={fitnessTabs}
+        options={fitnessTabs.map((tab) => ({ ...tab, label: t(tab.label) }))}
         value={activeTab}
         onChange={setActiveTab}
         accent="fit"

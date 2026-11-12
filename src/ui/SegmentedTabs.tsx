@@ -63,7 +63,7 @@ export function SegmentedTabs({
             }`}
             onClick={() => onChange(option.value)}
           >
-            {option.label}
+            <span className="min-w-0 truncate">{option.label}</span>
           </button>
         );
       })}
