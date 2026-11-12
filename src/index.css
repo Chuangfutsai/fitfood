@@ -11,6 +11,22 @@
   --color-food: #22C55E;
   --color-fit: #F97316;
   --color-ok: #16A34A;
+  --color-tomato: #F7C1C1;
+  --color-tomato-ink: #791F1F;
+  --color-carrot: #FAC775;
+  --color-carrot-ink: #633806;
+  --color-corn: #FCE9A8;
+  --color-corn-ink: #633806;
+  --color-lettuce: #C0DD97;
+  --color-lettuce-ink: #27500A;
+  --color-eggplant: #CECBF6;
+  --color-eggplant-ink: #3C3489;
+  --color-mint: #9FE1CB;
+  --color-mint-ink: #085041;
+  --color-radish: #F4C0D1;
+  --color-radish-ink: #72243E;
+  --color-broccoli: #97C459;
+  --color-broccoli-ink: #173404;
   --font-sans: "Inter", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
 }
 

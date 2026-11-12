@@ -132,7 +132,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
   const wheelDishes = useMemo(() => {
     const shuffled = [...availableDishes].sort(() => Math.random() - 0.5);
 
-    return shuffled.slice(0, 12);
+    return shuffled.slice(0, 8);
   }, [availableDishes, shuffleKey]);
 
   const resultDish =

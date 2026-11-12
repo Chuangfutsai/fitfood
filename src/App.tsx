@@ -11,7 +11,7 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh]">
-      <main className="pb-[calc(env(safe-area-inset-bottom)+88px)]">
+      <main className="mx-auto max-w-[480px] pb-[calc(env(safe-area-inset-bottom)+88px)]">
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
