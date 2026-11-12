@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useLang } from '../i18n/LanguageContext';
+import { dishTranslations } from '../i18n/dataTranslations';
 
 interface WheelItem {
   id: string;
@@ -103,6 +104,111 @@ function splitLabel(label: string, isEnglish: boolean): string[] {
     trimmedLabel.slice(0, splitIndex),
     trimmedLabel.slice(splitIndex),
   ];
+}
+
+function EnglishWheelLabel({ item, centerAngle, wheelAngle, color }: {
+  item: WheelItem;
+  centerAngle: number;
+  wheelAngle: number;
+  color: string;
+}) {
+  const shortName = dishTranslations[item.id]?.wheelEn;
+  const label = (shortName ?? item.label).trim().replace(/\s+/g, ' ');
+  const [lines, setLines] = useState<string[]>([label]);
+  const measurementRef = useRef<SVGTSpanElement>(null);
+  const ellipsisRef = useRef<SVGTSpanElement>(null);
+  const position = pointOnCircle(100, centerAngle);
+  const screenAngle = normalizeAngle(centerAngle + wheelAngle);
+  const isLeftHalf = screenAngle > 90 && screenAngle < 270;
+
+  useLayoutEffect(() => {
+    let cancelled = false;
+
+    const measure = () => {
+      const text = measurementRef.current;
+      const ellipsis = ellipsisRef.current;
+      if (cancelled || !text || !ellipsis || !label) return;
+
+      // At r=100, an 88px line leaves room for the rim and the center button.
+      // Two 16px-spaced lines also stay clear of the narrowest (45°) sector edges.
+      const availableWidth = 88;
+      const words = label.split(' ');
+      const offsets: number[] = [];
+      let offset = 0;
+      for (const word of words) {
+        offsets.push(offset);
+        offset += word.length + 1;
+      }
+      const width = (start: number, end: number) => end <= start ? 0 :
+        text.getSubStringLength(offsets[start], offsets[end - 1] + words[end - 1].length - offsets[start]);
+      let nextLines: string[];
+
+      if (width(0, words.length) <= availableWidth) {
+        nextLines = [label];
+      } else if (shortName) {
+        // Default short names contain at most two complete words; never truncate them.
+        nextLines = words;
+      } else {
+        nextLines = [];
+        let start = 0;
+        for (let line = 0; line < 2 && start < words.length; line += 1) {
+          let end = start;
+          while (end < words.length && width(start, end + 1) <= availableWidth) end += 1;
+
+          if (end === start) {
+            nextLines.push('…');
+            break;
+          }
+          if (line === 1 && end < words.length) {
+            while (end > start && width(start, end) + ellipsis.getComputedTextLength() > availableWidth) end -= 1;
+            nextLines.push(words.slice(start, end).join(' ') + '…');
+          } else {
+            nextLines.push(words.slice(start, end).join(' '));
+          }
+          start = end;
+        }
+      }
+
+      setLines((previous) => previous.join('\n') === nextLines.join('\n') ? previous : nextLines);
+    };
+
+    measure();
+    void document.fonts.ready.then(measure);
+    document.fonts.addEventListener('loadingdone', measure);
+    return () => {
+      cancelled = true;
+      document.fonts.removeEventListener('loadingdone', measure);
+    };
+  }, [label, shortName]);
+
+  return (
+    <>
+      <text visibility="hidden" aria-hidden="true" className="pointer-events-none text-[14px] font-semibold">
+        <tspan ref={measurementRef}>{label}</tspan>
+        <tspan ref={ellipsisRef}>…</tspan>
+      </text>
+      <text
+        data-wheel-label={item.id}
+        data-wheel-center={centerAngle}
+        data-wheel-angle={wheelAngle}
+        x={position.x}
+        y={position.y}
+        className={`${color} text-[14px] font-semibold`}
+        dominantBaseline="middle"
+        textAnchor="middle"
+        transform={`rotate(${centerAngle + (isLeftHalf ? 180 : 0)} ${position.x} ${position.y})`}
+        aria-label={item.label}
+      >
+        {/* Include the wheel's final rotation when flipping: every stopped label reads upright. */}
+        <title>{item.label}</title>
+        {lines.map((line, index) => (
+          <tspan key={index} x={position.x} y={position.y + (index - (lines.length - 1) / 2) * 16}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </>
+  );
 }
 
 export function Wheel({ items, onResult }: WheelProps) {
@@ -251,6 +357,9 @@ export function Wheel({ items, onResult }: WheelProps) {
                     isWinner ? handleFlashComplete : undefined
                   }
                 />
+                {lang === 'en' ? (
+                  <EnglishWheelLabel item={item} centerAngle={centerAngle} wheelAngle={angle} color={color.text} />
+                ) : (
                 <text
                   x={labelPosition.x}
                   y={labelPosition.y}
@@ -275,6 +384,7 @@ export function Wheel({ items, onResult }: WheelProps) {
                     </>
                   )}
                 </text>
+                )}
               </g>
             );
           })}
