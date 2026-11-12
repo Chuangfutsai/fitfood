@@ -69,6 +69,203 @@ export const defaultCardioPlans: CardioPlan[] = [
       '緩和 5 分鐘：等級 3–4',
     ],
   },
+  {
+    id: 'cardio-elliptical-steady',
+    machine: 'elliptical',
+    name: '穩定燃脂',
+    minutes: 35,
+    steps: [
+      '暖身 5 分鐘，阻力 3',
+      '主段 25 分鐘，阻力 5–6，踏頻 65–75 RPM，心率約最大心率 60–70%',
+      '緩和 5 分鐘，阻力 2',
+    ],
+  },
+  {
+    id: 'cardio-elliptical-interval',
+    machine: 'elliptical',
+    name: '間歇',
+    minutes: 24,
+    steps: [
+      '暖身 5 分鐘，阻力 3',
+      '8 輪：40 秒阻力 8–10 快踩＋80 秒阻力 4 慢踩',
+      '緩和 3 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-elliptical-reverse',
+    machine: 'elliptical',
+    name: '前後交替',
+    minutes: 40,
+    steps: [
+      '暖身 5 分鐘',
+      '前進 15 分鐘，阻力 6',
+      '倒踩 10 分鐘，阻力 5',
+      '前進 5 分鐘，阻力 7',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-spinbike-steady',
+    machine: 'spinbike',
+    name: '穩定騎乘',
+    minutes: 40,
+    steps: [
+      '暖身 5 分鐘輕阻力，85–95 RPM',
+      '主段 30 分鐘中阻力，80–90 RPM，心率 65–75%',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-spinbike-tabata',
+    machine: 'spinbike',
+    name: 'Tabata 間歇',
+    minutes: 20,
+    steps: [
+      '暖身 6 分鐘',
+      '2 組 × 8 輪（20 秒全力＋10 秒休息），組間輕鬆踩 2 分鐘',
+      '緩和 4 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-spinbike-pyramid',
+    machine: 'spinbike',
+    name: '爬坡金字塔',
+    minutes: 30,
+    steps: [
+      '暖身 5 分鐘',
+      '每 2 分鐘加一級阻力，共 5 次',
+      '每 2 分鐘減一級阻力，共 5 次',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-recumbent-recovery',
+    machine: 'recumbent',
+    name: '恢復日',
+    minutes: 30,
+    steps: [
+      '全程低阻力，70–80 RPM，心率 55–65%，能邊騎邊說話的強度',
+    ],
+  },
+  {
+    id: 'cardio-recumbent-steady',
+    machine: 'recumbent',
+    name: '穩定燃脂',
+    minutes: 40,
+    steps: [
+      '暖身 5 分鐘',
+      '主段 30 分鐘中阻力，75–85 RPM，心率 60–70%',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-recumbent-interval',
+    machine: 'recumbent',
+    name: '輕間歇',
+    minutes: 25,
+    steps: [
+      '暖身 5 分鐘',
+      '6 輪：1 分鐘中高阻力＋2 分鐘輕鬆踩',
+      '緩和 2 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-rower-steady',
+    machine: 'rower',
+    name: '穩定划',
+    minutes: 25,
+    steps: [
+      '暖身 5 分鐘，18–20 槳/分',
+      '主段 15 分鐘，22–24 槳/分，中等強度',
+      '緩和 5 分鐘。提示：發力順序是腿→身體→手，回槳反過來',
+    ],
+  },
+  {
+    id: 'cardio-rower-interval',
+    machine: 'rower',
+    name: '250 公尺衝刺',
+    minutes: 22,
+    steps: [
+      '暖身 5 分鐘',
+      '6 × 250 公尺衝刺，每趟之間休息 1 分鐘',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-rower-endurance',
+    machine: 'rower',
+    name: '耐力',
+    minutes: 30,
+    steps: [
+      '暖身 5 分鐘',
+      '20 分鐘穩定配速，22 槳/分，每 5 分鐘檢查一次姿勢',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-airbike-interval',
+    machine: 'airbike',
+    name: '15/45 間歇',
+    minutes: 20,
+    steps: [
+      '暖身 5 分鐘',
+      '10 輪：15 秒全力＋45 秒輕踩',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-airbike-emom',
+    machine: 'airbike',
+    name: 'EMOM',
+    minutes: 16,
+    steps: [
+      '暖身 4 分鐘',
+      '8 分鐘：每分鐘一開始衝刺 8 大卡，剩下的時間休息',
+      '緩和 4 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-airbike-steady',
+    machine: 'airbike',
+    name: '低強度穩定',
+    minutes: 25,
+    steps: [
+      '全程輕到中等阻力，手腳一起出力，心率 60–70%',
+    ],
+  },
+  {
+    id: 'cardio-skierg-steady',
+    machine: 'skierg',
+    name: '穩定拉',
+    minutes: 20,
+    steps: [
+      '暖身 4 分鐘',
+      '主段 12 分鐘，穩定節奏，每次都用髖部帶動往下拉',
+      '緩和 4 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-skierg-interval',
+    machine: 'skierg',
+    name: '30/30 間歇',
+    minutes: 20,
+    steps: [
+      '暖身 5 分鐘',
+      '10 輪：30 秒快拉＋30 秒慢拉',
+      '緩和 5 分鐘',
+    ],
+  },
+  {
+    id: 'cardio-skierg-combo',
+    machine: 'skierg',
+    name: '上下肢搭配',
+    minutes: 30,
+    steps: [
+      '暖身 5 分鐘',
+      '4 輪：滑雪機 3 分鐘＋休息 1 分鐘＋原地踏步 1 分鐘',
+      '緩和 5 分鐘',
+    ],
+  },
 ];
 
 export const defaultStrengthPlans: StrengthPlan[] = [

@@ -155,6 +155,185 @@ export const cardioTranslations: Record<
       ],
     },
   },
+  'cardio-elliptical-steady': {
+    en: {
+      name: 'Steady Fat Burn',
+      steps: [
+        'Warm up for 5 minutes at resistance 3',
+        'Main phase: 25 minutes at resistance 5–6, cadence 65–75 RPM, heart rate around 60–70% of maximum',
+        'Cool down for 5 minutes at resistance 2',
+      ],
+    },
+  },
+  'cardio-elliptical-interval': {
+    en: {
+      name: 'Intervals',
+      steps: [
+        'Warm up for 5 minutes at resistance 3',
+        '8 rounds: 40 seconds of fast strides at resistance 8–10 + 80 seconds of slow strides at resistance 4',
+        'Cool down for 3 minutes',
+      ],
+    },
+  },
+  'cardio-elliptical-reverse': {
+    en: {
+      name: 'Forward & Reverse',
+      steps: [
+        'Warm up for 5 minutes',
+        'Stride forward for 15 minutes at resistance 6',
+        'Stride backward for 10 minutes at resistance 5',
+        'Stride forward for 5 minutes at resistance 7',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-spinbike-steady': {
+    en: {
+      name: 'Steady Ride',
+      steps: [
+        'Warm up for 5 minutes at light resistance, 85–95 RPM',
+        'Main phase: 30 minutes at moderate resistance, 80–90 RPM, heart rate 65–75%',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-spinbike-tabata': {
+    en: {
+      name: 'Tabata Intervals',
+      steps: [
+        'Warm up for 6 minutes',
+        '2 sets × 8 rounds (20 seconds all-out + 10 seconds of rest), with 2 minutes of easy pedaling between sets',
+        'Cool down for 4 minutes',
+      ],
+    },
+  },
+  'cardio-spinbike-pyramid': {
+    en: {
+      name: 'Pyramid Climb',
+      steps: [
+        'Warm up for 5 minutes',
+        'Increase resistance by one level every 2 minutes, 5 times',
+        'Decrease resistance by one level every 2 minutes, 5 times',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-recumbent-recovery': {
+    en: {
+      name: 'Recovery Day',
+      steps: [
+        'Use low resistance throughout, 70–80 RPM, heart rate 55–65%, at an effort that lets you talk while riding',
+      ],
+    },
+  },
+  'cardio-recumbent-steady': {
+    en: {
+      name: 'Steady Fat Burn',
+      steps: [
+        'Warm up for 5 minutes',
+        'Main phase: 30 minutes at moderate resistance, 75–85 RPM, heart rate 60–70%',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-recumbent-interval': {
+    en: {
+      name: 'Gentle Intervals',
+      steps: [
+        'Warm up for 5 minutes',
+        '6 rounds: 1 minute at moderately high resistance + 2 minutes of easy pedaling',
+        'Cool down for 2 minutes',
+      ],
+    },
+  },
+  'cardio-rower-steady': {
+    en: {
+      name: 'Steady Row',
+      steps: [
+        'Warm up for 5 minutes at 18–20 strokes/min',
+        'Main phase: 15 minutes at 22–24 strokes/min, moderate intensity',
+        'Cool down for 5 minutes. Tip: drive with legs → body → arms; reverse the sequence on the recovery',
+      ],
+    },
+  },
+  'cardio-rower-interval': {
+    en: {
+      name: '250 m Sprints',
+      steps: [
+        'Warm up for 5 minutes',
+        '6 × 250 m sprints, with 1 minute of rest between sprints',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-rower-endurance': {
+    en: {
+      name: 'Endurance',
+      steps: [
+        'Warm up for 5 minutes',
+        'Row at a steady pace for 20 minutes at 22 strokes/min, checking your form every 5 minutes',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-airbike-interval': {
+    en: {
+      name: '15/45 Intervals',
+      steps: [
+        'Warm up for 5 minutes',
+        '10 rounds: 15 seconds all-out + 45 seconds of easy pedaling',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-airbike-emom': {
+    en: {
+      name: 'EMOM',
+      steps: [
+        'Warm up for 4 minutes',
+        'For 8 minutes: sprint for 8 kcal at the start of each minute, then rest for the remainder of that minute',
+        'Cool down for 4 minutes',
+      ],
+    },
+  },
+  'cardio-airbike-steady': {
+    en: {
+      name: 'Low-Intensity Steady Ride',
+      steps: [
+        'Use light to moderate resistance throughout, working your arms and legs together, heart rate 60–70%',
+      ],
+    },
+  },
+  'cardio-skierg-steady': {
+    en: {
+      name: 'Steady Pull',
+      steps: [
+        'Warm up for 4 minutes',
+        'Main phase: 12 minutes at a steady rhythm, driving each downward pull from your hips',
+        'Cool down for 4 minutes',
+      ],
+    },
+  },
+  'cardio-skierg-interval': {
+    en: {
+      name: '30/30 Intervals',
+      steps: [
+        'Warm up for 5 minutes',
+        '10 rounds: 30 seconds of fast pulls + 30 seconds of slow pulls',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
+  'cardio-skierg-combo': {
+    en: {
+      name: 'Upper & Lower Body Circuit',
+      steps: [
+        'Warm up for 5 minutes',
+        '4 rounds: 3 minutes on the SkiErg + 1 minute of rest + 1 minute of marching in place',
+        'Cool down for 5 minutes',
+      ],
+    },
+  },
 };
 
 export const exerciseTranslations: Record<string, NameTranslation> = {

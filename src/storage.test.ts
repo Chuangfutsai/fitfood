@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MealEntry } from './types';
 import { recipes } from './food/recipes';
 import { createMealId, loadData, sanitizeMealLog } from './storage';
+import { defaultCardioPlans } from './fitness/fitnessDefaults';
 
 const date = '2026-11-12';
 const validEntry: MealEntry = {
@@ -139,6 +140,96 @@ describe('loadData', () => {
     vi.stubGlobal('localStorage', { getItem: () => { throw new Error('Blocked'); } });
     expect(() => loadData()).not.toThrow();
     expect(loadData().mealLog).toEqual({});
+  });
+
+  it('merges six legacy cardio plans into all 24 defaults and persists the migration', () => {
+    const legacyPlans = defaultCardioPlans.filter(
+      (plan) => plan.machine === 'treadmill' || plan.machine === 'stairclimber',
+    );
+    expect(legacyPlans).toHaveLength(6);
+    const storage = mockStorage(JSON.stringify({ cardioPlans: legacyPlans }));
+    const data = loadData();
+    expect(data.cardioPlans).toHaveLength(24);
+    expect(new Set(data.cardioPlans.map((plan) => plan.id)).size).toBe(24);
+    expect(new Set(data.cardioPlans.map((plan) => plan.machine)).size).toBe(8);
+    expect(data.cardioPlans).toEqual(expect.arrayContaining(defaultCardioPlans));
+    expect(storage.setItem).toHaveBeenCalledWith('fitfood:v1', JSON.stringify(data));
+  });
+
+  it('preserves existing user edits when a default has the same cardio plan ID', () => {
+    const edited = {
+      ...defaultCardioPlans[0],
+      name: 'My Edited Walk',
+      minutes: 17,
+      steps: ['My warm-up', 'My main set'],
+    };
+    mockStorage(JSON.stringify({ cardioPlans: [edited] }));
+    const data = loadData();
+    expect(data.cardioPlans).toHaveLength(24);
+    expect(data.cardioPlans.find((plan) => plan.id === edited.id)).toEqual(edited);
+  });
+
+  it('discards unknown cardio machines while retaining valid plans', () => {
+    const invalid = {
+      id: 'cardio-unknown',
+      machine: 'unknown-machine',
+      name: 'Unsupported Machine',
+      minutes: 10,
+      steps: ['Unsupported step'],
+    };
+    const storage = mockStorage(JSON.stringify({
+      cardioPlans: [defaultCardioPlans[0], invalid],
+    }));
+    const data = loadData();
+    expect(data.cardioPlans).toHaveLength(24);
+    expect(data.cardioPlans.some((plan) => plan.id === invalid.id)).toBe(false);
+    expect(data.cardioPlans).toContainEqual(defaultCardioPlans[0]);
+    expect(storage.setItem).toHaveBeenCalledWith('fitfood:v1', JSON.stringify(data));
+  });
+
+  it('clears missing cardio plan references without changing other weekly fields', () => {
+    const weeklyPlan = [
+      { weekday: 1, cardioPlanId: defaultCardioPlans[0].id, strengthFocus: 'full' },
+      { weekday: 2, cardioPlanId: 'cardio-missing', strengthFocus: 'push' },
+      { weekday: 0, cardioPlanId: null, strengthFocus: null },
+    ];
+    const storage = mockStorage(JSON.stringify({ cardioPlans: defaultCardioPlans, weeklyPlan }));
+    const data = loadData();
+    expect(data.weeklyPlan).toEqual([
+      weeklyPlan[0],
+      { ...weeklyPlan[1], cardioPlanId: null },
+      weeklyPlan[2],
+    ]);
+    expect(storage.setItem).toHaveBeenCalledWith('fitfood:v1', JSON.stringify(data));
+  });
+
+  it('keeps custom cardio plans alongside all defaults', () => {
+    const custom = {
+      id: 'cardio-custom-rower',
+      machine: 'rower',
+      name: 'My Row',
+      minutes: 9,
+      steps: ['My custom rowing session'],
+    };
+    mockStorage(JSON.stringify({ cardioPlans: [custom] }));
+    const data = loadData();
+    expect(data.cardioPlans).toHaveLength(25);
+    expect(data.cardioPlans[0]).toEqual(custom);
+    expect(data.cardioPlans).toEqual(expect.arrayContaining(defaultCardioPlans));
+  });
+
+  it('does not duplicate cardio plans or rewrite storage after migration is complete', () => {
+    const legacyPlans = defaultCardioPlans.filter(
+      (plan) => plan.machine === 'treadmill' || plan.machine === 'stairclimber',
+    );
+    let stored = JSON.stringify({ cardioPlans: legacyPlans });
+    const setItem = vi.fn((_key: string, value: string) => { stored = value; });
+    vi.stubGlobal('localStorage', { getItem: () => stored, setItem });
+    const first = loadData();
+    const second = loadData();
+    expect(first.cardioPlans).toHaveLength(24);
+    expect(second).toEqual(first);
+    expect(setItem).toHaveBeenCalledOnce();
   });
 
   it('cleans corrupt meal and weekly logs, persists the repair, and preserves unrelated data', () => {

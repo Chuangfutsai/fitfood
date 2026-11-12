@@ -18,6 +18,17 @@ interface MachineImageProps {
   className: string;
 }
 
+const machines: CardioMachine[] = [
+  'treadmill',
+  'stairclimber',
+  'elliptical',
+  'spinbike',
+  'recumbent',
+  'rower',
+  'airbike',
+  'skierg',
+];
+
 function MachineImage({ machine, className }: MachineImageProps) {
   const { t } = useLang();
   const [hasError, setHasError] = useState(false);
@@ -72,8 +83,12 @@ export function CardioPanel(_props: CardioPanelProps) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3">
-        {(['treadmill', 'stairclimber'] as CardioMachine[]).map(
+      <div
+        role="group"
+        aria-label={t('cardio.chooseMachine')}
+        className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2"
+      >
+        {machines.map(
           (machineOption) => {
             const selected = machine === machineOption;
             const label = t(`cardio.machine.${machineOption}`);
@@ -82,11 +97,12 @@ export function CardioPanel(_props: CardioPanelProps) {
               <button
                 key={machineOption}
                 type="button"
-                className="min-w-0 text-left transition-transform active:scale-[0.97]"
+                className="w-[120px] shrink-0 snap-start text-left transition-transform active:scale-[0.97]"
+                aria-pressed={selected}
                 onClick={() => setMachine(machineOption)}
               >
                 <Card
-                  className={`h-full p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ${
+                  className={`h-full p-2! shadow-[0_8px_24px_rgba(15,23,42,0.06)] ${
                     selected ? 'border-2! border-fit!' : 'border border-line'
                   }`}
                 >
@@ -94,7 +110,7 @@ export function CardioPanel(_props: CardioPanelProps) {
                     machine={machineOption}
                     className="aspect-square w-full rounded-[14px]"
                   />
-                  <p className="truncate pt-3 text-center text-[15px] font-semibold text-text">
+                  <p className="mt-2 line-clamp-2 h-10 text-center text-sm font-semibold leading-5 text-text">
                     {label}
                   </p>
                 </Card>

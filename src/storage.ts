@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AppData, MealEntry } from './types';
+import type { AppData, CardioPlan, MealEntry } from './types';
 import { recipes } from './food/recipes';
 import {
   defaultDishes,
@@ -13,6 +13,10 @@ import {
 
 const STORAGE_KEY = 'fitfood:v1';
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const CARDIO_MACHINES = new Set([
+  'treadmill', 'stairclimber', 'elliptical', 'spinbike',
+  'recumbent', 'rower', 'airbike', 'skierg',
+]);
 
 export function createMealId(): string {
   try {
@@ -91,6 +95,26 @@ function sanitizeWeeklyLog(raw: unknown): Record<string, boolean> {
   );
 }
 
+function mergeCardioPlans(raw: unknown): CardioPlan[] {
+  const plans = new Map<string, CardioPlan>();
+
+  if (Array.isArray(raw)) {
+    for (const plan of raw) {
+      if (!plan || typeof plan !== 'object' || Array.isArray(plan)) continue;
+      if (typeof plan.id !== 'string' || !plan.id.trim()) continue;
+      if (typeof plan.machine !== 'string' || !CARDIO_MACHINES.has(plan.machine)) continue;
+      if (!plans.has(plan.id)) plans.set(plan.id, plan as CardioPlan);
+    }
+  }
+
+  // Existing plans win by ID; new defaults are appended without replacing edits.
+  for (const plan of defaultCardioPlans) {
+    if (!plans.has(plan.id)) plans.set(plan.id, plan);
+  }
+
+  return [...plans.values()];
+}
+
 function createDefaultData(): AppData {
   return {
     version: 1,
@@ -119,18 +143,27 @@ export function loadData(): AppData {
       return createDefaultData();
     }
 
+    const cardioPlans = mergeCardioPlans(parsedData.cardioPlans);
+    const cardioPlanIds = new Set(cardioPlans.map((plan) => plan.id));
+    const weeklyPlan = Array.isArray(parsedData.weeklyPlan)
+      ? parsedData.weeklyPlan
+      : defaultWeeklyPlan;
+
     const data: AppData = {
       ...createDefaultData(),
       ...parsedData,
-      weeklyPlan: Array.isArray(parsedData.weeklyPlan)
-        ? parsedData.weeklyPlan
-        : defaultWeeklyPlan,
+      cardioPlans,
+      weeklyPlan: weeklyPlan.map((day) => ({
+        ...day,
+        cardioPlanId: cardioPlanIds.has(day?.cardioPlanId ?? '') ? day.cardioPlanId : null,
+      })),
       weeklyLog: sanitizeWeeklyLog(parsedData.weeklyLog),
       mealLog: sanitizeMealLog(parsedData.mealLog),
     };
 
     if (
-      !Array.isArray(parsedData.weeklyPlan) ||
+      JSON.stringify(parsedData.cardioPlans) !== JSON.stringify(data.cardioPlans) ||
+      JSON.stringify(parsedData.weeklyPlan) !== JSON.stringify(data.weeklyPlan) ||
       JSON.stringify(parsedData.weeklyLog) !== JSON.stringify(data.weeklyLog) ||
       JSON.stringify(parsedData.mealLog) !== JSON.stringify(data.mealLog)
     ) {
