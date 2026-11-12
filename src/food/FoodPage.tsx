@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  ChefHat,
+  Carrot,
   Clock,
+  Egg,
+  Salad,
   Shuffle,
   UtensilsCrossed,
 } from 'lucide-react';
@@ -61,22 +64,71 @@ function DishImage({ id, name, className }: DishImageProps) {
   );
 }
 
-function HeroCard() {
+function HeroCard({ count }: { count: number }) {
   const [hasError, setHasError] = useState(false);
+  const now = new Date();
+  const hour = now.getHours();
+  const weekdays = [
+    '星期日',
+    '星期一',
+    '星期二',
+    '星期三',
+    '星期四',
+    '星期五',
+    '星期六',
+  ];
+  const dateLabel = `${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`;
+  const greeting =
+    hour >= 5 && hour < 11
+      ? '早安'
+      : hour >= 11 && hour < 14
+        ? '午安'
+        : hour >= 14 && hour < 18
+          ? '下午好'
+          : '晚安';
 
   if (hasError) {
     return (
-      <section className="relative h-[200px] overflow-hidden rounded-[24px] bg-food/15 p-5">
-        <ChefHat
-          className="absolute right-4 top-4 text-food/40"
-          size={72}
-          strokeWidth={1.5}
-        />
-        <div className="absolute bottom-5 left-5">
-          <p className="text-sm text-text">今天吃什麼？</p>
-          <h1 className="text-[28px] font-extrabold text-text">
-            轉一下，交給命運
+      <section className="relative isolate h-[200px] w-full overflow-hidden rounded-[24px] bg-food/10">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <motion.div
+            className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-tomato"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
+          >
+            <Carrot className="text-white" size={32} strokeWidth={2} />
+          </motion.div>
+          <motion.div
+            className="absolute -right-6 top-[100px] flex h-24 w-24 items-center justify-center rounded-full bg-corn"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+          >
+            <Egg className="text-white" size={32} strokeWidth={2} />
+          </motion.div>
+          <motion.div
+            className="absolute right-9 top-[72px] flex h-[72px] w-[72px] items-center justify-center rounded-full bg-lettuce"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+          >
+            <Salad className="text-white" size={32} strokeWidth={2} />
+          </motion.div>
+        </div>
+
+        <div className="absolute left-5 top-5 z-10">
+          <p className="text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
+          <p className="mt-2 text-sm leading-5 text-text">
+            {greeting}，今天吃什麼？
+          </p>
+        </div>
+
+        <div className="absolute bottom-5 left-5 z-10 max-w-[60%]">
+          <h1 className="text-[28px] font-extrabold leading-8 text-text">
+            <span className="block">轉一下，</span>
+            <span className="block">交給命運</span>
           </h1>
+          <span className="mt-2 inline-flex rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-food tabular-nums">
+            現在可做 {count} 道菜
+          </span>
         </div>
       </section>
     );
@@ -167,7 +219,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
 
   return (
     <main className="space-y-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)]">
-      <HeroCard />
+      <HeroCard count={availableDishes.length} />
 
       <SegmentedTabs
         options={foodTabs}
