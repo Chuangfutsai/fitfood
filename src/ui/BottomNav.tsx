@@ -39,7 +39,7 @@ export function BottomNav({ tab, onChange }: BottomNavProps) {
         >
           {todaySelected && <span className={`pointer-events-none absolute top-3 h-8 w-8 rounded-full blur-xl ${tabStyles.today.glow}`} />}
           <CalendarDays className="relative" size={22} />
-          <span className="relative truncate">{t('today.nav')}</span>
+          <span className="relative max-w-full px-2 text-center leading-4">{t('today.nav')}</span>
         </button>
         <button
           type="button"
@@ -54,7 +54,7 @@ export function BottomNav({ tab, onChange }: BottomNavProps) {
             />
           )}
           <ChefHat className="relative" size={22} />
-          <span className="relative truncate">{t('nav.food')}</span>
+          <span className="relative max-w-full px-2 text-center leading-4">{t('nav.food')}</span>
         </button>
         <button
           type="button"
@@ -69,7 +69,7 @@ export function BottomNav({ tab, onChange }: BottomNavProps) {
             />
           )}
           <Dumbbell className="relative" size={22} />
-          <span className="relative truncate">{t('nav.fit')}</span>
+          <span className="relative max-w-full px-2 text-center leading-4">{t('nav.fit')}</span>
         </button>
       </div>
     </nav>

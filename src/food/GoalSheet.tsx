@@ -279,7 +279,18 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
           <legend className="text-sm font-semibold text-text">{t('goals.deficit')}</legend>
           <div className="grid grid-cols-2 gap-2">
             {([0.15, 0.2] as const).map((value) => (
-              <button key={value} type="button" aria-pressed={deficit === value} onClick={() => setDeficit(value)} className={`h-11 min-w-0 truncate rounded-[14px] border px-2 text-sm font-semibold ${deficit === value ? 'border-food bg-food text-white' : 'border-line bg-surface text-muted'}`}>
+              <button
+                key={value}
+                type="button"
+                aria-pressed={deficit === value}
+                onClick={() => setDeficit(value)}
+                className={
+                  'min-h-11 min-w-0 rounded-[14px] border px-2 py-2 text-sm font-semibold leading-5 ' +
+                  (deficit === value
+                    ? 'border-food bg-food text-white'
+                    : 'border-line bg-surface text-muted')
+                }
+              >
                 {t(value === 0.15 ? 'goals.gentle' : 'goals.standard')}
               </button>
             ))}
@@ -289,9 +300,11 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
         <div aria-live="polite" className="grid grid-cols-3 gap-2 rounded-[16px] bg-food/10 p-3 text-food">
           {(['bmr', 'kcal', 'proteinG'] as const).map((key) => (
             <div key={key} className="min-w-0 space-y-1">
-              <p className="text-[11px] leading-4">{t(`goals.result.${key}`)}</p>
+              <p className="text-xs leading-4">{t(`goals.result.${key}`)}</p>
               <p className="text-lg font-bold tabular-nums">{targets ? Math.round(targets[key]) : t('goals.pending')}</p>
-              <p className="text-[10px]">{t(key === 'proteinG' ? 'goals.grams' : 'goals.kcalUnit')}</p>
+              <p className="text-xs leading-4">
+                {t(key === 'proteinG' ? 'goals.grams' : 'goals.kcalUnit')}
+              </p>
             </div>
           ))}
         </div>

@@ -48,15 +48,17 @@ function CalorieRing({ eaten, target, label, remainingLabel, overLabel }: { eate
   const remaining = Math.abs(target - eaten);
 
   return (
-    <div className="relative flex h-[148px] w-[148px] items-center justify-center">
+    <div className="relative flex aspect-square w-2/5 shrink-0 items-center justify-center">
       <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90" role="img" aria-label={label}>
         <circle cx="64" cy="64" r={radius} fill="none" stroke="currentColor" strokeWidth="10" className="text-surface-2" />
         <circle cx="64" cy="64" r={radius} fill="none" stroke="currentColor" strokeWidth="10" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={circumference * (1 - ratio)} className={`transition-[stroke-dashoffset] duration-500 ${isOver ? 'text-tomato-ink' : 'text-food'}`} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center tabular-nums">
         <span className="text-[26px] font-extrabold leading-7 text-text">{remaining}</span>
-        <span className={`text-[11px] font-semibold ${isOver ? 'text-tomato-ink' : 'text-muted'}`}>{isOver ? overLabel : remainingLabel}</span>
-        <span className="mt-1 text-[10px] text-muted">kcal</span>
+        <span className={`text-xs font-semibold ${isOver ? 'text-tomato-ink' : 'text-muted'}`}>
+          {isOver ? overLabel : remainingLabel}
+        </span>
+        <span className="mt-1 text-xs text-muted">kcal</span>
       </div>
     </div>
   );
@@ -158,9 +160,23 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
             </div>
           </div>
         ) : (
-          <button type="button" onClick={onOpenFood} className="flex min-h-[148px] w-full items-center gap-4 rounded-[14px] text-left transition-transform active:scale-[0.97]">
-            <div className="flex h-[118px] w-[118px] shrink-0 items-center justify-center rounded-full border-[10px] border-food/20 text-food"><Plus size={30} aria-hidden="true" /></div>
-            <div>
+          <button
+            type="button"
+            onClick={onOpenFood}
+            className={
+              'flex min-h-[148px] w-full items-center gap-4 rounded-[14px] text-left ' +
+              'transition-transform active:scale-[0.97]'
+            }
+          >
+            <div
+              className={
+                'flex aspect-square w-[36%] shrink-0 items-center justify-center rounded-full ' +
+                'border-[10px] border-food/20 text-food'
+              }
+            >
+              <Plus size={30} aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
               <p className="text-[18px] font-extrabold text-text">{tt('today.goal')}</p>
               <p className="mt-2 text-sm leading-5 text-muted">{tt('today.goalHint')}</p>
             </div>
@@ -182,9 +198,21 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
                 ? tDish(plannedDish ?? { id: planned.dishId, name: tt('today.addMeal') })
                 : tt('today.addMeal');
             return (
-              <button key={meal} type="button" onClick={onOpenFood} className="flex min-h-[76px] flex-col items-center justify-center rounded-[16px] border border-line bg-surface px-2 text-center shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-transform active:scale-[0.97]">
+              <button
+                key={meal}
+                type="button"
+                onClick={onOpenFood}
+                className={
+                  'flex min-h-[100px] flex-col items-center justify-center rounded-[16px] border ' +
+                  'border-line bg-surface px-2 py-2 text-center ' +
+                  'shadow-[0_8px_24px_rgba(15,23,42,0.04)] ' +
+                  'transition-transform active:scale-[0.97]'
+                }
+              >
                 <span className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${entry || planned ? 'bg-surface-2' : 'bg-food/10 text-food'}`}><MealImage dishId={entry?.dishId ?? planned?.dishId} name={name} planned={Boolean(planned)} /></span>
-                <span className="mt-1 w-full truncate text-[11px] font-semibold text-text">{entry ? name : planned ? tt('today.planned') : t(`meal.${meal}`)}</span>
+                <span className="mt-1 w-full break-words text-xs font-semibold leading-4 text-text">
+                  {entry ? name : planned ? tt('today.planned') : t(`meal.${meal}`)}
+                </span>
               </button>
             );
           })}
@@ -195,7 +223,24 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[15px] font-extrabold text-text">{tt('today.training')}</h2>
-            {isRestDay ? <p className="mt-1 text-xs text-muted">{tt('today.restHint')}</p> : <div className="mt-1 space-y-0.5 text-xs text-muted">{cardioName && <p className="truncate"><span className="font-semibold text-fit">{tt('today.cardio')} · </span>{cardioName}</p>}{strengthName && <p className="truncate"><span className="font-semibold text-fit">{tt('today.strength')} · </span>{strengthName}</p>}</div>}
+            {isRestDay ? (
+              <p className="mt-1 text-xs text-muted">{tt('today.restHint')}</p>
+            ) : (
+              <div className="mt-1 space-y-0.5 text-xs text-muted">
+                {cardioName && (
+                  <p className="break-words">
+                    <span className="font-semibold text-fit">{tt('today.cardio')} · </span>
+                    {cardioName}
+                  </p>
+                )}
+                {strengthName && (
+                  <p className="break-words">
+                    <span className="font-semibold text-fit">{tt('today.strength')} · </span>
+                    {strengthName}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           {isRestDay ? <span className="shrink-0 rounded-full bg-surface-2 px-3 py-2 text-xs font-bold text-muted">{tt('today.rest')}</span> : (
             <button type="button" aria-pressed={completed} onClick={toggleCompleted} className={`flex h-11 shrink-0 items-center gap-1.5 rounded-[14px] px-3 text-xs font-bold text-white transition-transform active:scale-[0.97] ${completed ? 'bg-ok' : 'bg-fit'}`}>
@@ -225,7 +270,14 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
       <section className="pb-2">
         <h2 className="mb-2 text-[15px] font-extrabold text-text">{tt('today.recent')}</h2>
         <div className="flex justify-between rounded-[16px] bg-surface px-3 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-          {recentDays.map(({ date, key }) => <div key={key} className="flex flex-col items-center gap-1 text-[10px] text-muted"><span>{formatDate(date, { weekday: 'narrow' })}</span><span className={`h-2.5 w-2.5 rounded-full ${data.weeklyLog[key] ? 'bg-fit' : 'bg-surface-2'}`} /></div>)}
+          {recentDays.map(({ date, key }) => (
+            <div key={key} className="flex flex-col items-center gap-1 text-xs text-muted">
+              <span>{formatDate(date, { weekday: 'narrow' })}</span>
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${data.weeklyLog[key] ? 'bg-fit' : 'bg-surface-2'}`}
+              />
+            </div>
+          ))}
         </div>
       </section>
     </main>

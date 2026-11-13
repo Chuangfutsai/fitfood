@@ -36,7 +36,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             transition={{ type: 'spring', stiffness: 360, damping: 32 }}
           >
             <div className="mb-5 flex items-center justify-between gap-4">
-              <h2 className="min-w-0 truncate text-xl font-bold text-text">{title}</h2>
+              <h2 className="min-w-0 break-words text-xl font-bold leading-6 text-text">{title}</h2>
               <button
                 type="button"
                 aria-label={t('common.close')}

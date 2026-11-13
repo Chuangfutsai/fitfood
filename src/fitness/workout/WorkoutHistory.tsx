@@ -53,7 +53,6 @@ export function WorkoutHistory({
 
   return (
     <section className="space-y-3" aria-label={t("history.title")}>
-      <h2 className="text-xl font-extrabold text-text">{t("history.title")}</h2>
       {ordered.map((session) => {
         const isOpen = openId === session.id;
         const completedEntries = session.entries.filter((entry) =>
@@ -83,10 +82,12 @@ export function WorkoutHistory({
                     <ChevronDown size={18} className="text-muted" />
                   )}
                 </div>
-                <p className="mt-1 text-xs text-muted tabular-nums">
-                  {t("minutes", { count: durationMinutes(session) })} ·{" "}
-                  {completedEntries.length} ·{" "}
-                  {Math.round(sessionVolume(session))} kg
+                <p className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted tabular-nums">
+                  <span className="whitespace-nowrap">
+                    {t("minutes", { count: durationMinutes(session) })}
+                  </span>
+                  <span className="whitespace-nowrap">· {completedEntries.length}</span>
+                  <span className="whitespace-nowrap">· {Math.round(sessionVolume(session))} kg</span>
                 </p>
               </button>
               <button
@@ -116,13 +117,13 @@ export function WorkoutHistory({
                       {entry.sets.map((set, index) => (
                         <li
                           key={index}
-                          className="flex justify-between text-xs tabular-nums text-muted"
+                          className="flex justify-between gap-2 text-xs tabular-nums text-muted"
                         >
                           <span>{index + 1}</span>
-                          <span>
+                          <span className="whitespace-nowrap">
                             {set.weightKg} kg × {set.reps}
                           </span>
-                          <span className={set.done ? "text-fit" : ""}>
+                          <span className={`whitespace-nowrap ${set.done ? "text-fit" : ""}`}>
                             {set.done ? t("done") : "—"}
                           </span>
                         </li>

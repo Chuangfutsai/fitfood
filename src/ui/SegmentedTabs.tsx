@@ -44,7 +44,7 @@ export function SegmentedTabs({
   const classes = accentClass[accent];
 
   return (
-    <div className="relative flex h-11 rounded-[14px] bg-surface p-1">
+    <div className="relative flex min-h-11 rounded-[14px] bg-surface p-1">
       <motion.div
         className={`pointer-events-none absolute inset-y-1 rounded-[10px] border ${classes.slider}`}
         layoutId={`segmented-tab-${accent}`}
@@ -58,12 +58,12 @@ export function SegmentedTabs({
           <button
             key={option.value}
             type="button"
-            className={`relative z-10 flex min-w-0 flex-1 items-center justify-center rounded-[10px] px-3 text-sm font-medium transition-transform active:scale-[0.97] ${
+            className={`relative z-10 flex min-w-0 flex-1 items-center justify-center rounded-[10px] px-1 py-1 text-sm font-medium leading-4 transition-transform active:scale-[0.97] ${
               isSelected ? classes.activeText : 'text-muted'
             }`}
             onClick={() => onChange(option.value)}
           >
-            <span className="min-w-0 truncate">{option.label}</span>
+            <span className="min-w-0 break-words text-center">{option.label}</span>
           </button>
         );
       })}

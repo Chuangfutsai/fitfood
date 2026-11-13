@@ -167,7 +167,7 @@ function WorkoutNumberInput({ value, field, label, onChange }: {
 }
 
 export function LiveWorkout({ plan, onClose }: Props) {
-  const { lang } = useLang();
+  const { lang, tExercise } = useLang();
   const t = (key: string, values?: Record<string, string | number>) =>
     workoutText(lang, key, values);
   const [state, setState] = useState(loadWorkoutState);
@@ -402,7 +402,7 @@ export function LiveWorkout({ plan, onClose }: Props) {
               className="space-y-2 rounded-[14px] bg-surface-2 p-3"
             >
               <p className="min-w-0 break-words text-sm text-muted">
-                {item.name}
+                {tExercise(item.name)}
               </p>
               <div className="flex flex-wrap gap-2">
                 <button

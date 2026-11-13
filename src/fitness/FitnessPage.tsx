@@ -65,8 +65,8 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
         </div>
 
         <div className="absolute left-5 right-[68px] top-5 z-10">
-          <p className="truncate text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
-          <p className="mt-2 truncate text-sm leading-5 text-text">
+          <p className="text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
+          <p className="mt-2 text-sm leading-5 text-text">
             {t('fitness.hero.greeting', { greeting })}
           </p>
         </div>
@@ -76,7 +76,7 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
             <span className="block">{t('fitness.hero.titleLine1')}</span>
             <span className="block">{t('fitness.hero.titleLine2')}</span>
           </h1>
-          <span className="mt-2 inline-block max-w-full truncate rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-fit">
+          <span className="mt-2 inline-block max-w-full break-words rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-fit">
             {t('fitness.hero.nextStrength', { focus: nextFocusLabel })}
           </span>
         </div>
