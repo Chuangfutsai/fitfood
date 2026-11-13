@@ -5,6 +5,7 @@ import { useAppData } from './storage';
 import { BottomNav } from './ui/BottomNav';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { useLang } from './i18n/LanguageContext';
+import { TodayPage } from './today/TodayPage';
 
 const FitnessPage = lazy(() => import('./fitness/FitnessPage').then((module) => ({ default: module.FitnessPage })));
 
@@ -15,7 +16,7 @@ export default function App() {
 function AppContent() {
   const { t } = useLang();
   const [data, setData] = useAppData();
-  const [tab, setTab] = useState<'food' | 'fit'>('food');
+  const [tab, setTab] = useState<'today' | 'food' | 'fit'>('today');
 
   return (
     <div className="min-h-[100dvh]">
@@ -28,7 +29,9 @@ function AppContent() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {tab === 'food' ? (
+            {tab === 'today' ? (
+              <TodayPage data={data} setData={setData} onOpenFood={() => setTab('food')} />
+            ) : tab === 'food' ? (
               <FoodPage data={data} setData={setData} />
             ) : (
               <Suspense fallback={
