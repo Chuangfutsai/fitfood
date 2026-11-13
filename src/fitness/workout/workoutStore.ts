@@ -2,6 +2,7 @@ import { exerciseLibrary } from '../exerciseLibrary';
 import type { ActiveSession, Session, WorkoutEntry, WorkoutSet, WorkoutState } from './types';
 
 export const WORKOUT_STORAGE_KEY = 'fitfood:workouts:v1';
+export const WORKOUT_REPLACED_EVENT = 'fitfood:workouts-replaced';
 const corruptPrefix = `${WORKOUT_STORAGE_KEY}:corrupt-`;
 
 const knownExerciseIds = new Set(exerciseLibrary.map((exercise) => exercise.id));
@@ -156,4 +157,11 @@ export function saveWorkoutState(state: WorkoutState): boolean {
     // Keep the in-memory workout state usable when browser storage is unavailable.
     return false;
   }
+}
+
+export function replaceWorkoutState(state: unknown): WorkoutState {
+  const workout = validateWorkoutState(state);
+  if (!saveWorkoutState(workout)) throw new Error('Unable to replace workout state');
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(WORKOUT_REPLACED_EVENT));
+  return workout;
 }

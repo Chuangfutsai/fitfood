@@ -1,5 +1,12 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { loadWorkoutState, saveWorkoutState, validateWorkoutState, WORKOUT_STORAGE_KEY } from './workoutStore';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  loadWorkoutState,
+  replaceWorkoutState,
+  saveWorkoutState,
+  validateWorkoutState,
+  WORKOUT_REPLACED_EVENT,
+  WORKOUT_STORAGE_KEY,
+} from './workoutStore';
 import type { Session, WorkoutSet } from './types';
 import {
   epleyOneRm,
@@ -68,6 +75,40 @@ describe('workout data layer', () => {
     localStorage.setItem = () => { throw new Error('Storage unavailable'); };
     expect(saveWorkoutState({ version: 1, sessions: [], active: null })).toBe(false);
     expect(values[WORKOUT_STORAGE_KEY]).toBe(stored);
+  });
+
+  it('replaces validated workouts and emits an event after writing', () => {
+    const events: string[] = [];
+    const target = new EventTarget();
+    vi.stubGlobal('window', target);
+    try {
+      target.addEventListener(WORKOUT_REPLACED_EVENT, () => events.push(WORKOUT_REPLACED_EVENT));
+      const valid = session('valid', 30, [completedSet(42.5, 8)]);
+      const replaced = replaceWorkoutState({
+        version: 1,
+        sessions: [{ id: 'broken', entries: [] }, valid],
+        active: null,
+      });
+      expect(replaced).toEqual({ version: 1, sessions: [valid], active: null });
+      expect(loadWorkoutState()).toEqual(replaced);
+      expect(events).toEqual([WORKOUT_REPLACED_EVENT]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('throws and does not emit a replacement event when storage fails', () => {
+    const events: string[] = [];
+    const target = new EventTarget();
+    vi.stubGlobal('window', target);
+    try {
+      target.addEventListener(WORKOUT_REPLACED_EVENT, () => events.push(WORKOUT_REPLACED_EVENT));
+      localStorage.setItem = () => { throw new Error('Storage unavailable'); };
+      expect(() => replaceWorkoutState({ version: 1, sessions: [], active: null })).toThrow();
+      expect(events).toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('preserves pending exercises and set counts through a storage round trip', () => {
