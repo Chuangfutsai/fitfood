@@ -570,3 +570,119 @@ describe('versioned defaults and schema validation', () => {
     expect(stored.storage.setItem).toHaveBeenCalledOnce();
   });
 });
+
+describe('corrupt storage recovery copies', () => {
+  const prefix = 'fitfood:v1:corrupt-';
+
+  function memoryStorage(raw: string, backups: Record<string, string> = {}) {
+    const values = new Map(Object.entries({ ...backups, 'fitfood:v1': raw }));
+    const storage = {
+      get length() { return values.size; },
+      key: (index: number) => [...values.keys()][index] ?? null,
+      getItem: vi.fn((key: string) => values.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => { values.set(key, value); }),
+      removeItem: vi.fn((key: string) => { values.delete(key); }),
+    };
+    vi.stubGlobal('localStorage', storage);
+    return { storage, values, backupKeys: () => [...values.keys()].filter((key) => key.startsWith(prefix)) };
+  }
+
+  it.each(['  {"broken":\n', ''])('preserves the exact malformed JSON before defaults can replace it: %j', (raw) => {
+    vi.spyOn(Date, 'now').mockReturnValue(1794511800000);
+    const { storage, values, backupKeys } = memoryStorage(raw);
+    const data = loadData();
+    expect(data).toEqual(createDefaultData());
+    expect(getStorageIssue()).toBe('invalid-data');
+    expect(backupKeys()).toEqual([`${prefix}1794511800000`]);
+    expect(values.get(backupKeys()[0])).toBe(raw);
+    expect(values.get('fitfood:v1')).toBe(raw);
+    expect(storage.setItem).toHaveBeenNthCalledWith(1, backupKeys()[0], raw);
+    saveData(data);
+    expect(values.get('fitfood:v1')).toBe(JSON.stringify(data));
+    expect(backupKeys()).toHaveLength(1);
+    expect(values.get(backupKeys()[0])).toBe(raw);
+  });
+
+  it('preserves data when its required migration is missing', () => {
+    const raw = ' { "version": 1, "important": "keep this" } ';
+    const { values, backupKeys } = memoryStorage(raw);
+    vi.spyOn(migrations, 'find').mockReturnValue(undefined);
+    expect(loadData()).toEqual(createDefaultData());
+    expect(getStorageIssue()).toBe('invalid-data');
+    expect(backupKeys()).toHaveLength(1);
+    expect(values.get(backupKeys()[0])).toBe(raw);
+    expect(values.get('fitfood:v1')).toBe(raw);
+  });
+
+  it('retains only the newest three numeric timestamps without deleting unrelated data', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1001);
+    const { storage, values, backupKeys } = memoryStorage('{new broken', {
+      [`${prefix}10`]: 'middle', [`${prefix}1000`]: 'newer', [`${prefix}9`]: 'oldest',
+      'fitfood:lang': 'en', 'fitfood:v1:before-restore': 'restore copy',
+    });
+    loadData();
+    expect(backupKeys().sort()).toEqual([`${prefix}10`, `${prefix}1000`, `${prefix}1001`]);
+    expect(values.get(`${prefix}1001`)).toBe('{new broken');
+    expect(storage.removeItem).toHaveBeenCalledExactlyOnceWith(`${prefix}9`);
+    expect(values.get('fitfood:lang')).toBe('en');
+    expect(values.get('fitfood:v1:before-restore')).toBe('restore copy');
+  });
+
+  it('does not overwrite an earlier recovery copy when corrupt reads share a millisecond', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1000);
+    const { values, backupKeys } = memoryStorage('{first');
+    loadData();
+    values.set('fitfood:v1', '{second');
+    loadData();
+    expect(backupKeys()).toEqual([`${prefix}1000`, `${prefix}1001`]);
+    expect(values.get(`${prefix}1000`)).toBe('{first');
+    expect(values.get(`${prefix}1001`)).toBe('{second');
+  });
+
+  it('does not fill the recovery history with repeated reads of the same corrupt value', () => {
+    const { backupKeys, storage } = memoryStorage('{broken');
+    loadData();
+    loadData();
+    expect(backupKeys()).toHaveLength(1);
+    expect(storage.setItem).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the original and existing copies when backup storage is full, including a later save', () => {
+    const raw = '{irreplaceable';
+    const { storage, values, backupKeys } = memoryStorage(raw, {
+      [`${prefix}1`]: 'one', [`${prefix}2`]: 'two', [`${prefix}3`]: 'three',
+    });
+    storage.setItem.mockImplementation((key, value) => {
+      if (key.startsWith(prefix)) throw new Error('Quota exceeded');
+      values.set(key, value);
+    });
+    expect(() => loadData()).not.toThrow();
+    expect(getStorageIssue()).toBe('storage-unavailable');
+    expect(() => saveData(createDefaultData())).toThrow('Quota exceeded');
+    expect(values.get('fitfood:v1')).toBe(raw);
+    expect(backupKeys()).toHaveLength(3);
+    expect(storage.removeItem).not.toHaveBeenCalled();
+    expect(storage.setItem.mock.calls.every(([key]) => key.startsWith(prefix))).toBe(true);
+  });
+
+  it('preserves malformed data even when saveData is called without loadData first', () => {
+    const { values, backupKeys } = memoryStorage('{broken');
+    const data = createDefaultData();
+    saveData(data);
+    expect(backupKeys()).toHaveLength(1);
+    expect(values.get(backupKeys()[0])).toBe('{broken');
+    expect(values.get('fitfood:v1')).toBe(JSON.stringify(data));
+  });
+
+  it('leaves future-version handling unchanged without classifying newer data as corruption', () => {
+    const raw = ' { "version": 99, "future": true } ';
+    const { storage, values, backupKeys } = memoryStorage(raw);
+    loadData();
+    expect(getStorageIssue()).toBe('future-version');
+    expect(() => saveData(createDefaultData())).toThrow(UnsupportedDataVersionError);
+    expect(values.get('fitfood:v1')).toBe(raw);
+    expect(backupKeys()).toEqual([]);
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(storage.removeItem).not.toHaveBeenCalled();
+  });
+});

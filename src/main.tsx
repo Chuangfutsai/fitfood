@@ -7,7 +7,7 @@ import { LanguageProvider } from './i18n/LanguageContext'
 
 // Native Capacitor builds load bundled web assets; a service worker could keep
 // serving an outdated bundle after an App Store update.
-if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
+if (import.meta.env.PROD && !Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js')
   })

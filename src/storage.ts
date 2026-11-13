@@ -14,6 +14,7 @@ import {
 
 export const STORAGE_KEY = 'fitfood:v1';
 export const CURRENT_SCHEMA_VERSION = 2;
+const CORRUPT_STORAGE_PREFIX = `${STORAGE_KEY}:corrupt-`;
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const CARDIO_MACHINES = new Set([
   'treadmill', 'stairclimber', 'elliptical', 'spinbike',
@@ -385,11 +386,34 @@ export function normalizeAppData(raw: unknown): AppData {
   };
 }
 
+function preserveCorruptData(raw: string): void {
+  const backups: { key: string; timestamp: number }[] = [];
+  for (let index = 0; index < localStorage.length; index++) {
+    const key = localStorage.key(index);
+    if (!key?.startsWith(CORRUPT_STORAGE_PREFIX)) continue;
+    const suffix = key.slice(CORRUPT_STORAGE_PREFIX.length);
+    const timestamp = Number(suffix);
+    if (/^\d+$/.test(suffix) && Number.isSafeInteger(timestamp)) backups.push({ key, timestamp });
+  }
+  backups.sort((a, b) => b.timestamp - a.timestamp);
+
+  // StrictMode can read the same broken value twice before the first save effect.
+  if (!backups[0] || localStorage.getItem(backups[0].key) !== raw) {
+    const timestamp = Math.max(Date.now(), (backups[0]?.timestamp ?? 0) + 1);
+    const key = `${CORRUPT_STORAGE_PREFIX}${timestamp}`;
+    // Preserve the original before pruning; a failed write must retain all recoverable data.
+    localStorage.setItem(key, raw);
+    backups.unshift({ key, timestamp });
+  }
+  for (const { key } of backups.slice(3)) localStorage.removeItem(key);
+}
+
 export function loadData(): AppData {
   storageIssue = null;
+  let storedData: string | null = null;
   try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) return createDefaultData();
+    storedData = localStorage.getItem(STORAGE_KEY);
+    if (storedData === null) return createDefaultData();
     const parsedData: unknown = JSON.parse(storedData);
     const data = normalizeAppData(parsedData);
     if (JSON.stringify(parsedData) !== JSON.stringify(data)) {
@@ -406,18 +430,27 @@ export function loadData(): AppData {
     storageIssue = error instanceof UnsupportedDataVersionError ? 'future-version'
       : error instanceof InvalidAppDataError || error instanceof SyntaxError ? 'invalid-data'
         : 'storage-unavailable';
+    if (storageIssue === 'invalid-data' && storedData !== null) {
+      try { preserveCorruptData(storedData); }
+      catch { storageIssue = 'storage-unavailable'; }
+    }
     return createDefaultData();
   }
 }
 
 export function saveData(data: AppData): void {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    let parsed: unknown;
-    try { parsed = JSON.parse(stored); } catch { /* A new valid save can replace malformed JSON. */ }
-    if (isRecord(parsed) && typeof parsed.version === 'number' && parsed.version > CURRENT_SCHEMA_VERSION) {
-      storageIssue = 'future-version';
-      throw new UnsupportedDataVersionError();
+  if (stored !== null) {
+    try {
+      migrateData(JSON.parse(stored));
+    } catch (error) {
+      if (error instanceof UnsupportedDataVersionError) {
+        storageIssue = 'future-version';
+        throw error;
+      }
+      if (!(error instanceof InvalidAppDataError || error instanceof SyntaxError)) throw error;
+      // Retry here as well: a failed load-time backup must never permit an overwrite.
+      preserveCorruptData(stored);
     }
   }
   const serialized = JSON.stringify(data);
