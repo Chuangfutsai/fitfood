@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Check, Flame, Plus, UtensilsCrossed } from 'lucide-react';
-import type { AppData, Meal, MealEntry } from '../types';
+import type { AppData, Meal } from '../types';
 import { Card } from '../ui/Card';
 import { useLang } from '../i18n/LanguageContext';
 import { getDailyTargets, getLocalDateKey, getStreak, getTodayNutrition } from '../stats';
 import { useTodayText } from './useTodayText';
+import { useMenuStore } from '../food/menu/menuStore';
 
 interface TodayPageProps {
   data: AppData;
@@ -58,19 +59,27 @@ function CalorieRing({ eaten, target, label, remainingLabel, overLabel }: { eate
   );
 }
 
-function MealImage({ meal, name }: { meal: MealEntry | undefined; name: string }) {
+function MealImage({ dishId, name, planned = false }: { dishId: string | undefined; name: string; planned?: boolean }) {
   const [failed, setFailed] = useState(false);
-  if (!meal) return <Plus size={24} aria-hidden="true" />;
+  if (!dishId) return <Plus size={24} aria-hidden="true" />;
   if (failed) return <UtensilsCrossed size={21} aria-hidden="true" className="text-food" />;
-  return <img src={`/dishes/${meal.dishId}.jpg`} alt={name} className="h-12 w-12 rounded-[14px] object-cover" onError={() => setFailed(true)} />;
+  return <img src={`/dishes/${dishId}.jpg`} alt={name} className={`h-12 w-12 rounded-[14px] object-cover ${planned ? 'opacity-50' : ''}`} onError={() => setFailed(true)} />;
 }
 
 const mealOrder: Meal[] = ['breakfast', 'lunch', 'dinner'];
+
+function currentMondayKey(date: Date) {
+  const monday = new Date(date);
+  monday.setHours(12, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return getLocalDateKey(monday);
+}
 
 export function TodayPage({ data, setData, onOpenFood }: TodayPageProps) {
   const today = useTodayDate();
   const { formatDate, t, tCardio, tDish } = useLang();
   const tt = useTodayText();
+  const { menu } = useMenuStore();
   const todayKey = getLocalDateKey(today);
   const nutrition = getTodayNutrition(data, today);
   const targets = data.profile ? getDailyTargets(data.profile) : null;
@@ -86,6 +95,9 @@ export function TodayPage({ data, setData, onOpenFood }: TodayPageProps) {
   const greeting = hour < 11 ? tt('today.greeting.morning') : hour < 18 ? tt('today.greeting.afternoon') : tt('today.greeting.evening');
   const entries = data.mealLog[todayKey] ?? [];
   const meals = mealOrder.map((meal) => [...entries].reverse().find((entry) => entry.meal === meal));
+  const plannedMeals = menu.weekStart === currentMondayKey(today)
+    ? menu.days.find((day) => day.dateKey === todayKey)?.meals ?? []
+    : [];
   const recentDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today);
     date.setDate(today.getDate() - 6 + index);
@@ -150,13 +162,18 @@ export function TodayPage({ data, setData, onOpenFood }: TodayPageProps) {
         <div className="grid grid-cols-3 gap-2">
           {mealOrder.map((meal, index) => {
             const entry = meals[index];
+            const planned = entry ? undefined : plannedMeals.find((item) => item.meal === meal);
             const dish = entry ? data.dishes.find((item) => item.id === entry.dishId) : undefined;
-            const name = entry ? tDish(dish ?? { id: entry.dishId, name: tt('today.addMeal') }) : tt('today.addMeal');
+            const plannedDish = planned ? data.dishes.find((item) => item.id === planned.dishId) : undefined;
+            const name = entry
+              ? tDish(dish ?? { id: entry.dishId, name: tt('today.addMeal') })
+              : planned
+                ? tDish(plannedDish ?? { id: planned.dishId, name: tt('today.addMeal') })
+                : tt('today.addMeal');
             return (
-              // TODO(T3): Link this meal slot to the meal-planning flow when it is available.
               <button key={meal} type="button" onClick={onOpenFood} className="flex min-h-[76px] flex-col items-center justify-center rounded-[16px] border border-line bg-surface px-2 text-center shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-transform active:scale-[0.97]">
-                <span className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${entry ? 'bg-surface-2' : 'bg-food/10 text-food'}`}><MealImage meal={entry} name={name} /></span>
-                <span className="mt-1 w-full truncate text-[11px] font-semibold text-text">{entry ? name : t(`meal.${meal}`)}</span>
+                <span className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${entry || planned ? 'bg-surface-2' : 'bg-food/10 text-food'}`}><MealImage dishId={entry?.dishId ?? planned?.dishId} name={name} planned={Boolean(planned)} /></span>
+                <span className="mt-1 w-full truncate text-[11px] font-semibold text-text">{entry ? name : planned ? tt('today.planned') : t(`meal.${meal}`)}</span>
               </button>
             );
           })}
