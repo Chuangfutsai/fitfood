@@ -2,7 +2,7 @@
 
 ## English
 
-**Effective date:** [DATE]
+**Effective date:** 2026-11-12
 
 FitFood does not collect any personal data or usage data. The app does not create accounts and does not use advertising, tracking, analytics, or data uploads.
 
@@ -12,11 +12,11 @@ If you create, export, or keep a device backup, you are responsible for safeguar
 
 If you remove the app or erase its local data, the data stored in the app may no longer be available. Because FitFood does not collect or retain your data, we cannot recover it for you.
 
-For questions about this policy, contact: [EMAIL]
+For questions about this policy, contact: https://github.com/Chuangfutsai/fitfood/issues
 
 ## 繁體中文
 
-**生效日期：** [DATE]
+**生效日期：** 2026-11-12
 
 FitFood 不收集任何個人資料或使用資料。本 App 不建立帳號、不使用廣告、追蹤、分析工具或資料上傳功能。
 
@@ -26,4 +26,4 @@ FitFood 不收集任何個人資料或使用資料。本 App 不建立帳號、�
 
 若您移除 App 或清除本機資料，App 內的資料可能無法再取得。由於 FitFood 不收集或保留您的資料，我們無法代為復原。
 
-若您對本政策有任何疑問，請聯絡：[EMAIL]
+若您對本政策有任何疑問，請聯絡：https://github.com/Chuangfutsai/fitfood/issues

@@ -1,5 +1,10 @@
 # App Store Listing Copy
 
+| Field | URL |
+| --- | --- |
+| Privacy Policy URL | https://chuangfutsai.github.io/fitfood/privacy/ |
+| Support URL | https://chuangfutsai.github.io/fitfood/ |
+
 Character counts include spaces and punctuation. They are calculated as Unicode characters; verify after localization in App Store Connect, whose counter is authoritative.
 
 ## English
