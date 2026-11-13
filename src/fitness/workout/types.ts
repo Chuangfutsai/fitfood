@@ -17,8 +17,12 @@ export interface Session {
   entries: WorkoutEntry[];
 }
 
+export interface ActiveSession extends Session {
+  pending?: { name: string; sets: number }[];
+}
+
 export interface WorkoutState {
   version: 1;
   sessions: Session[];
-  active: Session | null;
+  active: ActiveSession | null;
 }

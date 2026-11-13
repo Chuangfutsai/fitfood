@@ -1,5 +1,28 @@
 import type { Session, WorkoutSet } from './types';
 
+export type WorkoutInputField = 'weightKg' | 'reps';
+
+export function isValidWorkoutInput(value: string, field: WorkoutInputField): boolean {
+  if (value === '') return true;
+  const pattern = field === 'weightKg' ? /^\d+(?:\.\d?)?$/ : /^\d+$/;
+  const maximum = field === 'weightKg' ? 999.9 : 999;
+  return pattern.test(value) && Number(value) <= maximum;
+}
+
+export function parseWorkoutInput(value: string, field: WorkoutInputField): number | null {
+  return isValidWorkoutInput(value, field) ? Number(value) : null;
+}
+
+export function normalizeWorkoutInput(value: string, field: WorkoutInputField): string {
+  const parsed = parseWorkoutInput(value, field);
+  return parsed === null ? value : String(parsed);
+}
+
+export function shouldAnnounceRestEnd(endAt: number, now: number, observedAt: number | null): boolean {
+  return observedAt !== null && observedAt < endAt && now >= endAt
+    && now - endAt <= 3000 && now - observedAt <= 3000;
+}
+
 export interface PersonalRecord {
   exerciseId: string;
   maxWeight: number;
@@ -56,12 +79,24 @@ export function personalRecords(current: Session, history: Session[]): PersonalR
         .filter((item) => item.exerciseId === entry.exerciseId)
         .flatMap((item) => item.sets.filter((set) => set.done));
     });
+    if (previous.length === 0) return [];
     const priorWeight = Math.max(0, ...previous.map((set) => set.weightKg));
     const priorOneRm = Math.max(0, ...previous.map((set) => epleyOneRm(set.weightKg, set.reps)));
     return maxWeight > priorWeight || (maxWeight === priorWeight && oneRm > priorOneRm)
       ? [{ exerciseId: entry.exerciseId, maxWeight, oneRm }]
       : [];
   });
+}
+
+export function firstTimeExercises(current: Session, history: Session[]): string[] {
+  const completedIds = new Set(
+    history.flatMap((session) => session.entries)
+      .filter((entry) => entry.sets.some((set) => set.done))
+      .map((entry) => entry.exerciseId),
+  );
+  return current.entries
+    .filter((entry) => entry.sets.some((set) => set.done) && !completedIds.has(entry.exerciseId))
+    .map((entry) => entry.exerciseId);
 }
 
 export function remainingRestSeconds(endAt: number, now = Date.now()): number {

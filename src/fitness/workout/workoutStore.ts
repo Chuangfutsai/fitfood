@@ -1,5 +1,5 @@
 import { exerciseLibrary } from '../exerciseLibrary';
-import type { Session, WorkoutEntry, WorkoutSet, WorkoutState } from './types';
+import type { ActiveSession, Session, WorkoutEntry, WorkoutSet, WorkoutState } from './types';
 
 export const WORKOUT_STORAGE_KEY = 'fitfood:workouts:v1';
 
@@ -53,6 +53,24 @@ function validateSession(value: unknown): Session | null {
   };
 }
 
+function validateActiveSession(value: unknown): ActiveSession | null {
+  const session = validateSession(value);
+  if (!session || session.endedAt !== undefined) return null;
+  const item = value as Record<string, unknown>;
+  if (!Array.isArray(item.pending)) return session;
+  const pending = item.pending.flatMap((candidate: unknown) => {
+    if (!candidate || typeof candidate !== 'object') return [];
+    const entry = candidate as Record<string, unknown>;
+    if (typeof entry.name !== 'string') return [];
+    const name = entry.name.trim();
+    if (name.length === 0 || name.length > 80) return [];
+    if (typeof entry.sets !== 'number' || !Number.isInteger(entry.sets)) return [];
+    if (entry.sets < 1 || entry.sets > 20) return [];
+    return [{ name, sets: entry.sets }];
+  });
+  return { ...session, pending };
+}
+
 export function validateWorkoutState(value: unknown): WorkoutState {
   if (!value || typeof value !== 'object') return emptyWorkoutState();
   const item = value as Record<string, unknown>;
@@ -60,11 +78,11 @@ export function validateWorkoutState(value: unknown): WorkoutState {
   const sessions = item.sessions
     .map(validateSession)
     .filter((session): session is Session => session !== null);
-  const active = item.active === null ? null : validateSession(item.active);
+  const active = item.active === null ? null : validateActiveSession(item.active);
   return {
     version: 1,
     sessions,
-    active: active && active.endedAt === undefined ? active : null,
+    active,
   };
 }
 
@@ -77,10 +95,12 @@ export function loadWorkoutState(): WorkoutState {
   }
 }
 
-export function saveWorkoutState(state: WorkoutState): void {
+export function saveWorkoutState(state: WorkoutState): boolean {
   try {
     localStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(validateWorkoutState(state)));
+    return true;
   } catch {
     // Keep the in-memory workout state usable when browser storage is unavailable.
+    return false;
   }
 }

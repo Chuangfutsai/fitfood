@@ -11,6 +11,7 @@ import type {
 } from '../types';
 import { Card } from '../ui/Card';
 import { useLang } from '../i18n/LanguageContext';
+import { LiveWorkout } from './workout/LiveWorkout';
 
 interface StrengthPanelProps {
   data: AppData;
@@ -122,6 +123,7 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
   const [completedFocus, setCompletedFocus] =
     useState<StrengthFocus | null>(null);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
+  const [workoutOpen, setWorkoutOpen] = useState(false);
 
   const isCompleted = completedFocus === todayFocus;
   const otherPlans = data.strengthPlans.filter(
@@ -145,6 +147,20 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
 
   return (
     <div className="space-y-5">
+      {workoutOpen ? (
+        <LiveWorkout
+          plan={todayPlan}
+          onClose={() => setWorkoutOpen(false)}
+        />
+      ) : (
+        <>
+          <button
+            type="button"
+            className="flex h-12 w-full items-center justify-center rounded-[14px] bg-fit text-sm font-semibold text-white"
+            onClick={() => setWorkoutOpen(true)}
+          >
+            開始訓練 / Start workout
+          </button>
       {todayPlan ? (
         <>
           <Card className="space-y-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
@@ -206,6 +222,8 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
       </section>
 
       <p className="text-xs text-muted">{t('fitness.disclaimer')}</p>
+        </>
+      )}
     </div>
   );
 }
