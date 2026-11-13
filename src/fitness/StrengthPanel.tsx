@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Check,
   ChevronDown,
@@ -10,8 +10,14 @@ import type {
   StrengthPlan,
 } from '../types';
 import { Card } from '../ui/Card';
+import { Sheet } from '../ui/Sheet';
 import { useLang } from '../i18n/LanguageContext';
-import { LiveWorkout } from './workout/LiveWorkout';
+import { workoutText } from '../i18n/strings.workout';
+import { ExerciseDetailsSheet, LiveWorkout } from './workout/LiveWorkout';
+import { WorkoutHistory } from './workout/WorkoutHistory';
+import { loadWorkoutState, saveWorkoutState } from './workout/workoutStore';
+import type { Session } from './workout/types';
+import { removeSession, restoreSession } from './workout/workoutUtils';
 
 interface StrengthPanelProps {
   data: AppData;
@@ -116,7 +122,7 @@ function OtherPlan({ plan, open, onToggle }: OtherPlanProps) {
 }
 
 export function StrengthPanel({ data, setData }: StrengthPanelProps) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const todayFocus = getTodayFocus(data.lastStrengthFocus);
   const todayPlan =
     data.strengthPlans.find((plan) => plan.focus === todayFocus) ?? null;
@@ -124,6 +130,46 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
     useState<StrengthFocus | null>(null);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [workoutOpen, setWorkoutOpen] = useState(false);
+  const [hasActiveWorkout, setHasActiveWorkout] = useState(
+    () => loadWorkoutState().active !== null,
+  );
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historySessions, setHistorySessions] = useState<Session[]>([]);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [removed, setRemoved] = useState<{ session: Session; index: number } | null>(null);
+
+  useEffect(() => {
+    if (!removed) return;
+    const timer = window.setTimeout(() => setRemoved(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [removed]);
+
+  const tWorkout = (key: string) => workoutText(lang, key);
+  const refreshWorkoutState = () => {
+    const fresh = loadWorkoutState();
+    setHasActiveWorkout(fresh.active !== null);
+    setHistorySessions(fresh.sessions);
+    return fresh;
+  };
+  const openHistory = () => {
+    refreshWorkoutState();
+    setHistoryOpen(true);
+  };
+  const deleteSession = (id: string) => {
+    const fresh = refreshWorkoutState();
+    const result = removeSession(fresh.sessions, id);
+    if (!result.removed || !saveWorkoutState({ ...fresh, sessions: result.sessions })) return;
+    setHistorySessions(result.sessions);
+    setRemoved({ session: result.removed, index: result.index });
+  };
+  const undoDelete = () => {
+    if (!removed) return;
+    const fresh = refreshWorkoutState();
+    const sessions = restoreSession(fresh.sessions, removed.session, removed.index);
+    if (!saveWorkoutState({ ...fresh, sessions })) return;
+    setHistorySessions(sessions);
+    setRemoved(null);
+  };
 
   const isCompleted = completedFocus === todayFocus;
   const otherPlans = data.strengthPlans.filter(
@@ -150,17 +196,42 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
       {workoutOpen ? (
         <LiveWorkout
           plan={todayPlan}
-          onClose={() => setWorkoutOpen(false)}
+          onClose={() => {
+            setWorkoutOpen(false);
+            refreshWorkoutState();
+          }}
         />
       ) : (
         <>
-          <button
-            type="button"
-            className="flex h-12 w-full items-center justify-center rounded-[14px] bg-fit text-sm font-semibold text-white"
-            onClick={() => setWorkoutOpen(true)}
-          >
-            開始訓練 / Start workout
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className={
+                'flex h-12 w-full items-center justify-center rounded-[14px] bg-fit text-sm font-semibold text-white'
+              }
+              onClick={() => setWorkoutOpen(true)}
+            >
+              {tWorkout(hasActiveWorkout ? 'resume' : 'start')}
+            </button>
+            <button
+              type="button"
+              className={
+                'flex h-12 w-full items-center justify-center rounded-[14px] bg-surface-2 ' +
+                'text-sm font-semibold text-text'
+              }
+              onClick={openHistory}
+            >
+              {tWorkout('history')}
+            </button>
+          </div>
+          {removed && (
+            <div role="status" className="flex items-center justify-between gap-3 rounded-[14px] bg-surface-2 p-3">
+              <span className="text-sm font-semibold text-text">{tWorkout('history.deleted')}</span>
+              <button type="button" className="min-h-11 text-sm font-bold text-fit" onClick={undoDelete}>
+                {tWorkout('undo')}
+              </button>
+            </div>
+          )}
       {todayPlan ? (
         <>
           <Card className="space-y-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
@@ -187,7 +258,8 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
 
           <button
             type="button"
-            className={`flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-sm font-semibold transition-transform active:scale-[0.97] ${
+            className={`flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-sm font-semibold
+              transition-transform active:scale-[0.97] ${
               isCompleted
                 ? 'bg-surface-2 text-muted'
                 : 'bg-fit text-white'
@@ -224,6 +296,18 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
       <p className="text-xs text-muted">{t('fitness.disclaimer')}</p>
         </>
       )}
+      <Sheet open={historyOpen} onClose={() => setHistoryOpen(false)} title={tWorkout('history.title')}>
+        <WorkoutHistory
+          sessions={historySessions}
+          onDelete={deleteSession}
+          onOpenExercise={setDetailsId}
+        />
+      </Sheet>
+      <ExerciseDetailsSheet
+        exerciseId={detailsId}
+        sessions={historySessions}
+        onClose={() => setDetailsId(null)}
+      />
     </div>
   );
 }

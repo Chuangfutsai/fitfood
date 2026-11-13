@@ -6,14 +6,19 @@ import { workoutText } from "../../i18n/strings.workout";
 import { Sheet } from "../../ui/Sheet";
 import { exerciseLibrary } from "../exerciseLibrary";
 import { ExercisePicker } from "./ExercisePicker";
+import { ExerciseChart } from "./ExerciseChart";
 import { RestTimer } from "./RestTimer";
+import { WorkoutSummary } from "./WorkoutSummary";
 import type { ActiveSession, WorkoutEntry, WorkoutSet, WorkoutState } from "./types";
 import { loadWorkoutState, saveWorkoutState } from "./workoutStore";
 import {
   completedSetCount,
+  exerciseMaxHistory,
+  firstTimeExercises,
   latestSetForExercise,
   normalizeWorkoutInput,
   parseWorkoutInput,
+  personalRecords,
   remainingRestSeconds,
   shouldAnnounceRestEnd,
 } from "./workoutUtils";
@@ -81,6 +86,53 @@ function createEntries(
   });
 }
 
+export function ExerciseDetailsSheet({
+  exerciseId,
+  sessions,
+  onClose,
+}: {
+  exerciseId: string | null;
+  sessions: WorkoutState["sessions"];
+  onClose: () => void;
+}) {
+  const { lang } = useLang();
+  const t = (key: string) => workoutText(lang, key);
+  const exercise = exerciseLibrary.find((item) => item.id === exerciseId);
+  const language = lang === "en" ? "en" : "zh";
+  return (
+    <Sheet open={exercise !== undefined} onClose={onClose} title={t("exercise.details")}>
+      {exercise && (
+        <div className="space-y-5">
+          <section>
+            <h3 className="text-lg font-extrabold text-text">{exercise.name[language]}</h3>
+            <h4 className="mt-4 text-sm font-bold text-text">{t("muscles")}</h4>
+            <p className="mt-1 text-sm text-muted">
+              {exercise.primaryMuscles.map((muscle) => muscle[language]).join(lang === "en" ? ", " : "、")}
+            </p>
+            <h4 className="mt-3 text-sm font-bold text-text">{t("muscles.secondary")}</h4>
+            <p className="mt-1 text-sm text-muted">
+              {exercise.secondaryMuscles.map((muscle) => muscle[language]).join(lang === "en" ? ", " : "、")}
+            </p>
+          </section>
+          <section>
+            <h4 className="text-sm font-bold text-text">{t("steps")}</h4>
+            <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-muted">
+              {exercise.steps[language].map((step) => <li key={step}>{step}</li>)}
+            </ol>
+          </section>
+          <section>
+            <h4 className="text-sm font-bold text-text">{t("mistakes")}</h4>
+            <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-muted">
+              {exercise.mistakes[language].map((mistake) => <li key={mistake}>{mistake}</li>)}
+            </ul>
+          </section>
+          <ExerciseChart points={exerciseMaxHistory(sessions, exercise.id)} />
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
 function WorkoutNumberInput({ value, field, label, onChange }: {
   value: number;
   field: "weightKg" | "reps";
@@ -125,6 +177,14 @@ export function LiveWorkout({ plan, onClose }: Props) {
   const [mappingIndex, setMappingIndex] = useState<number | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [summary, setSummary] = useState<{
+    session: WorkoutState["sessions"][number]; records: ReturnType<typeof personalRecords>;
+    firstTimeIds: string[];
+  } | null>(null);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [restFinished, setRestFinished] = useState(false);
+  const restFinishedTimer = useRef<number | null>(null);
+  const dirty = useRef(false);
   const [removal, setRemoval] = useState<{ index: number; expiresAt: number } | null>(null);
   const observedRest = useRef<{ endAt: number; at: number } | null>(null);
   const active = state.active;
@@ -134,8 +194,11 @@ export function LiveWorkout({ plan, onClose }: Props) {
     const next = update(latestState.current);
     latestState.current = next;
     setState(next);
+    dirty.current = true;
   };
   useEffect(() => {
+    if (!dirty.current) return;
+    dirty.current = false;
     setSaveFailed(!saveWorkoutState(state));
   }, [state]);
   useEffect(() => {
@@ -153,7 +216,7 @@ export function LiveWorkout({ plan, onClose }: Props) {
   useEffect(() => {
     const endAt = active?.restEndsAt;
     const currentTime = Date.now();
-    if (endAt === undefined || pickerOpen || document.visibilityState !== "visible") {
+    if (endAt === undefined || document.visibilityState !== "visible") {
       observedRest.current = null;
       return;
     }
@@ -164,6 +227,11 @@ export function LiveWorkout({ plan, onClose }: Props) {
     const observedAt = observedRest.current?.endAt === endAt ? observedRest.current.at : null;
     observedRest.current = null;
     if (shouldAnnounceRestEnd(endAt, currentTime, observedAt)) navigator.vibrate?.(150);
+    if (observedAt === null) {
+      if (restFinishedTimer.current !== null) window.clearTimeout(restFinishedTimer.current);
+      setRestFinished(true);
+      restFinishedTimer.current = window.setTimeout(() => setRestFinished(false), 3000);
+    }
     updateState((current) => {
       const currentActive = current.active;
       if (!currentActive || currentActive.restEndsAt !== endAt)
@@ -173,7 +241,10 @@ export function LiveWorkout({ plan, onClose }: Props) {
         active: { ...currentActive, restEndsAt: undefined },
       };
     });
-  }, [active?.restEndsAt, now, pickerOpen]);
+  }, [active?.restEndsAt, now]);
+  useEffect(() => () => {
+    if (restFinishedTimer.current !== null) window.clearTimeout(restFinishedTimer.current);
+  }, []);
   useEffect(() => {
     if (!removal) return;
     const timer = window.setTimeout(() => setRemoval(null), Math.max(0, removal.expiresAt - Date.now()));
@@ -241,10 +312,22 @@ export function LiveWorkout({ plan, onClose }: Props) {
       setSaveFailed(true);
       return;
     }
+    const finished = next.sessions[0];
     latestState.current = next;
     setState(next);
-    onClose();
+    if (discardEmpty) onClose();
+    else if (finished) {
+      setSummary({
+        session: finished,
+        records: personalRecords(finished, current.sessions),
+        firstTimeIds: firstTimeExercises(finished, current.sessions),
+      });
+    }
   };
+
+  if (summary) {
+    return <WorkoutSummary {...summary} onClose={onClose} />;
+  }
 
   if (!active)
     return (
@@ -360,9 +443,13 @@ export function LiveWorkout({ plan, onClose }: Props) {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="break-words text-base font-bold text-text">
+                <button
+                  type="button"
+                  onClick={() => setDetailsId(entry.exerciseId)}
+                  className="min-h-11 break-words text-left text-base font-bold text-text active:scale-[0.97]"
+                >
                   {lang === "en" ? exercise.name.en : exercise.name.zh}
-                </h2>
+                </button>
                 {previous && (
                   <p className="mt-1 text-xs text-muted">
                     {t("last", {
@@ -557,6 +644,18 @@ export function LiveWorkout({ plan, onClose }: Props) {
           }
         />
       )}
+      {restFinished && (
+        <p
+          role="status"
+          className={
+            'fixed inset-x-0 z-50 mx-auto max-w-[480px] border border-line bg-surface p-3 ' +
+            'text-sm font-semibold text-fit shadow-[0_8px_24px_rgba(15,23,42,0.06)]'
+          }
+          style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
+        >
+          {t("rest.finished")}
+        </p>
+      )}
       <Sheet
         open={pickerOpen}
         onClose={() => {
@@ -567,6 +666,11 @@ export function LiveWorkout({ plan, onClose }: Props) {
       >
         <ExercisePicker addedIds={mappingIndex === null ? addedIds : []} onAdd={addExercise} />
       </Sheet>
+      <ExerciseDetailsSheet
+        exerciseId={detailsId}
+        sessions={state.sessions}
+        onClose={() => setDetailsId(null)}
+      />
     </div>
   );
 }

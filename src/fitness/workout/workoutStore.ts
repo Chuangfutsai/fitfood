@@ -2,6 +2,7 @@ import { exerciseLibrary } from '../exerciseLibrary';
 import type { ActiveSession, Session, WorkoutEntry, WorkoutSet, WorkoutState } from './types';
 
 export const WORKOUT_STORAGE_KEY = 'fitfood:workouts:v1';
+const corruptPrefix = `${WORKOUT_STORAGE_KEY}:corrupt-`;
 
 const knownExerciseIds = new Set(exerciseLibrary.map((exercise) => exercise.id));
 
@@ -87,16 +88,68 @@ export function validateWorkoutState(value: unknown): WorkoutState {
 }
 
 export function loadWorkoutState(): WorkoutState {
+  let raw: string | null;
   try {
-    const raw = localStorage.getItem(WORKOUT_STORAGE_KEY);
-    return raw ? validateWorkoutState(JSON.parse(raw)) : emptyWorkoutState();
+    raw = localStorage.getItem(WORKOUT_STORAGE_KEY);
   } catch {
+    return emptyWorkoutState();
+  }
+  if (!raw) return emptyWorkoutState();
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object' || (parsed as { version?: unknown }).version !== 1) {
+      backupCorruptWorkout(raw);
+      return emptyWorkoutState();
+    }
+    return validateWorkoutState(parsed);
+  } catch {
+    backupCorruptWorkout(raw);
     return emptyWorkoutState();
   }
 }
 
+function backupCorruptWorkout(raw: string): void {
+  try {
+    const corruptKeys = getCorruptKeys();
+    const latestKey = corruptKeys.at(-1);
+    if (latestKey && localStorage.getItem(latestKey) === raw) return;
+    const key = `${corruptPrefix}${Date.now()}`;
+    localStorage.setItem(key, raw);
+    for (const oldKey of getCorruptKeys().slice(0, -3)) localStorage.removeItem(oldKey);
+  } catch {
+    // Never alter the source value when its backup cannot be written.
+  }
+}
+
+function getCorruptKeys(): string[] {
+  const keys: string[] = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith(corruptPrefix)) keys.push(key);
+  }
+  return keys.sort();
+}
+
+function isVersionOneJson(raw: string): boolean {
+  try {
+    const value = JSON.parse(raw) as unknown;
+    return !!value && typeof value === 'object' && (value as { version?: unknown }).version === 1;
+  } catch {
+    return false;
+  }
+}
+
+function hasCorruptBackup(raw: string): boolean {
+  return getCorruptKeys().some((key) => localStorage.getItem(key) === raw);
+}
+
 export function saveWorkoutState(state: WorkoutState): boolean {
   try {
+    const current = localStorage.getItem(WORKOUT_STORAGE_KEY);
+    if (current && !isVersionOneJson(current) && !hasCorruptBackup(current)) {
+      backupCorruptWorkout(current);
+      if (!hasCorruptBackup(current)) return false;
+    }
     localStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(validateWorkoutState(state)));
     return true;
   } catch {

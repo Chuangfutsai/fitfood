@@ -2,6 +2,7 @@ export type WorkoutLanguage = "zh-Hant" | "en";
 
 const copy: Record<string, readonly [string, string]> = {
   start: ["開始訓練", "Start workout"],
+  resume: ["繼續訓練", "Resume workout"],
   plan: ["使用目前課表", "Use current plan"],
   blank: ["從空白開始", "Start blank"],
   add: ["加入動作", "Add exercise"],
@@ -50,6 +51,10 @@ const copy: Record<string, readonly [string, string]> = {
   steps: ["步驟", "Steps"],
   mistakes: ["常見錯誤", "Common mistakes"],
   muscles: ["主要肌群", "Primary muscles"],
+  "muscles.secondary": ["次要肌群", "Secondary muscles"],
+  "exercise.details": ["動作說明", "Exercise details"],
+  "rest.finished": ["休息結束", "Rest finished"],
+  "history.deleted": ["已刪除", "Deleted"],
   summary: ["訓練摘要", "Workout summary"],
   duration: ["總時間", "Total time"],
   sets: ["完成組數", "Completed sets"],

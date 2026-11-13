@@ -42,6 +42,13 @@ beforeEach(() => {
       setItem: (key: string, value: string) => {
         values[key] = value;
       },
+      get length() {
+        return Object.keys(values).length;
+      },
+      key: (index: number) => Object.keys(values)[index] ?? null,
+      removeItem: (key: string) => {
+        delete values[key];
+      },
     },
   });
 });
@@ -143,9 +150,61 @@ describe('workout data layer', () => {
     expect(remainingRestSeconds(100, 200)).toBe(0);
   });
 
-  it('returns an empty state for malformed JSON', () => {
-    values[WORKOUT_STORAGE_KEY] = '{broken';
+  it('backs up malformed JSON byte-for-byte before returning an empty state', () => {
+    const raw = '{broken';
+    values[WORKOUT_STORAGE_KEY] = raw;
     expect(loadWorkoutState()).toEqual({ version: 1, sessions: [], active: null });
+    const backupKey = Object.keys(values).find((key) => key.startsWith(`${WORKOUT_STORAGE_KEY}:corrupt-`));
+    expect(backupKey).toBeDefined();
+    expect(values[backupKey!]).toBe(raw);
+  });
+
+  it('does not overwrite a newer workout version', () => {
+    const raw = JSON.stringify({ version: 2, sessions: [], active: null });
+    values[WORKOUT_STORAGE_KEY] = raw;
+    expect(loadWorkoutState()).toEqual({ version: 1, sessions: [], active: null });
+    expect(values[WORKOUT_STORAGE_KEY]).toBe(raw);
+  });
+
+  it('keeps only the latest three corrupt workout backups', () => {
+    values[`${WORKOUT_STORAGE_KEY}:corrupt-100`] = 'oldest';
+    values[`${WORKOUT_STORAGE_KEY}:corrupt-200`] = 'older';
+    values[`${WORKOUT_STORAGE_KEY}:corrupt-300`] = 'old';
+    values[WORKOUT_STORAGE_KEY] = '{broken';
+    const realNow = Date.now;
+    Date.now = () => 400;
+    loadWorkoutState();
+    Date.now = realNow;
+    const keys = Object.keys(values).filter((key) => key.startsWith(`${WORKOUT_STORAGE_KEY}:corrupt-`));
+    expect(keys.sort()).toEqual([
+      `${WORKOUT_STORAGE_KEY}:corrupt-200`,
+      `${WORKOUT_STORAGE_KEY}:corrupt-300`,
+      `${WORKOUT_STORAGE_KEY}:corrupt-400`,
+    ]);
+  });
+
+  it('keeps the source value when corrupt-workout backup fails', () => {
+    const raw = '{broken';
+    values[WORKOUT_STORAGE_KEY] = raw;
+    localStorage.setItem = () => { throw new Error('Storage unavailable'); };
+    expect(loadWorkoutState()).toEqual({ version: 1, sessions: [], active: null });
+    expect(values[WORKOUT_STORAGE_KEY]).toBe(raw);
+  });
+
+  it('refuses to overwrite corrupt data when save-time backup fails', () => {
+    const raw = '{broken';
+    values[WORKOUT_STORAGE_KEY] = raw;
+    localStorage.setItem = () => { throw new Error('Storage unavailable'); };
+    expect(saveWorkoutState({ version: 1, sessions: [], active: null })).toBe(false);
+    expect(values[WORKOUT_STORAGE_KEY]).toBe(raw);
+  });
+
+  it('deduplicates repeated loads of the same corrupt workout data', () => {
+    values[WORKOUT_STORAGE_KEY] = '{broken';
+    for (let index = 0; index < 5; index += 1) loadWorkoutState();
+    const backups = Object.keys(values).filter((key) => key.startsWith(`${WORKOUT_STORAGE_KEY}:corrupt-`));
+    expect(backups).toHaveLength(1);
+    expect(values[backups[0]]).toBe('{broken');
   });
 
   it('drops a session with required fields missing', () => {
