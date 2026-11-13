@@ -1,6 +1,5 @@
 import { CalendarDays, ChefHat, Dumbbell } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
-import { todayStrings } from '../i18n/strings.today';
 
 interface BottomNavProps {
   tab: 'today' | 'food' | 'fit';
@@ -23,7 +22,7 @@ const tabStyles = {
 };
 
 export function BottomNav({ tab, onChange }: BottomNavProps) {
-  const { lang, t } = useLang();
+  const { t } = useLang();
   const todaySelected = tab === 'today';
   const foodSelected = tab === 'food';
   const fitSelected = tab === 'fit';
@@ -40,7 +39,7 @@ export function BottomNav({ tab, onChange }: BottomNavProps) {
         >
           {todaySelected && <span className={`pointer-events-none absolute top-3 h-8 w-8 rounded-full blur-xl ${tabStyles.today.glow}`} />}
           <CalendarDays className="relative" size={22} />
-          <span className="relative truncate">{todayStrings['today.nav'][lang === 'zh-Hant' ? 0 : 1]}</span>
+          <span className="relative truncate">{t('today.nav')}</span>
         </button>
         <button
           type="button"
