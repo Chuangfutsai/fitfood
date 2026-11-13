@@ -139,12 +139,19 @@ fitfood/
          ├─ types.ts
          ├─ workoutStore.ts
          ├─ workoutUtils.ts
+         ├─ LiveWorkout.tsx          # 進行中的訓練與組數記錄
+         ├─ ExercisePicker.tsx       # 選擇與加入訓練動作
+         ├─ RestTimer.tsx            # 組間休息倒數計時
+         ├─ WorkoutSummary.tsx       # 訓練完成摘要與個人紀錄
+         ├─ WorkoutHistory.tsx       # 歷次訓練紀錄與刪除入口
+         ├─ ExerciseChart.tsx        # 單一動作的進度圖表
          └─ workout.test.ts
 ```
 
 - `food/`、`fitness/`、`today/` 各自負責功能；共用 UI、主資料、統計與翻譯可合理引用，不再限制只能共用三個檔案。
 - 「今天」總覽可以整合飲食與訓練資料；跨模組共用優先引用型別、資料或純函式，避免頁面元件互相依賴與循環引用。
 - 功能模組可以有自己的型別、store、純函式與測試，不要求全部擠進 `types.ts` 或 `storage.ts`。
+- 元件介面 `WorkoutSummary({ session, records, firstTimeIds, onClose })`、`WorkoutHistory({ sessions, onDelete, onOpenExercise })`、`ExerciseChart({ points })` 已經固定，未經授權不准改。
 - `dist/`、依賴目錄與原生同步產物是工具生成內容，不手動修改。未授權不得執行會改動其他白名單外檔案的安裝、原生同步或格式化指令。
 
 ## 4. 資料與相容性
