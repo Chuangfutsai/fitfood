@@ -1,18 +1,34 @@
 import type { AppData } from './types';
 import { CURRENT_SCHEMA_VERSION, normalizeAppData, UnsupportedDataVersionError } from './storage';
+import { emptyMenuState, MENU_STORAGE_KEY, sanitizeMenuState } from './food/menu/menuStore';
+import type { MenuState } from './food/menu/menuTypes';
+
+export interface BackupModules {
+  menu?: MenuState;
+  // TODO(T4): Add validated workout backup support when the workout module is ready.
+  workouts?: unknown;
+}
 
 export interface BackupEnvelope {
   app: 'fitfood';
   schemaVersion: typeof CURRENT_SCHEMA_VERSION;
   exportedAt: string;
   data: AppData;
+  modules?: BackupModules;
 }
 
 export type BackupErrorCode = 'invalid-json' | 'wrong-app' | 'future-version' | 'invalid-data' | 'invalid-date';
 export type BackupResult = { ok: true; backup: BackupEnvelope } | { ok: false; error: BackupErrorCode };
 
 export function exportBackup(data: AppData, now: Date = new Date()): BackupEnvelope {
-  return { app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: now.toISOString(), data };
+  let menu = emptyMenuState();
+  try {
+    const raw = localStorage.getItem(MENU_STORAGE_KEY);
+    menu = raw ? sanitizeMenuState(JSON.parse(raw)) : emptyMenuState();
+  } catch {
+    // A blocked or malformed module store must not block a main-data backup.
+  }
+  return { app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: now.toISOString(), data, modules: { menu } };
 }
 
 export function getBackupFilename(now: Date = new Date()): string {
@@ -46,9 +62,15 @@ export function parseBackup(text: string): BackupResult {
   try {
     // Storage and import share the same migration and validation pipeline.
     const data = normalizeAppData(envelope.data);
+    const modules = envelope.modules && typeof envelope.modules === 'object' && !Array.isArray(envelope.modules)
+      ? (() => {
+        const rawModules = envelope.modules as Record<string, unknown>;
+        return { ...(Object.prototype.hasOwnProperty.call(rawModules, 'menu') ? { menu: sanitizeMenuState(rawModules.menu) } : {}) };
+      })()
+      : undefined;
     return {
       ok: true,
-      backup: { app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: envelope.exportedAt, data },
+      backup: { app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: envelope.exportedAt, data, ...(modules ? { modules } : {}) },
     };
   } catch (error) {
     return { ok: false, error: error instanceof UnsupportedDataVersionError ? 'future-version' : 'invalid-data' };

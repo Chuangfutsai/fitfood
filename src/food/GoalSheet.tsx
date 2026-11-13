@@ -7,6 +7,8 @@ import { getDailyTargets, getLocalDateKey } from '../stats';
 import { exportBackup, getBackupFilename, parseBackup } from '../backup';
 import type { BackupEnvelope } from '../backup';
 import { deliverBackupFile } from '../ui/ErrorBoundary';
+import { replaceMenuState } from './menu/menuStore';
+import type { MenuState } from './menu/menuTypes';
 
 interface GoalSheetProps {
   open: boolean;
@@ -31,6 +33,7 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
   const [backupError, setBackupError] = useState<string | null>(null);
   const [backupMessage, setBackupMessage] = useState<string | null>(null);
   const [undoData, setUndoData] = useState<AppData | null>(null);
+  const [undoMenu, setUndoMenu] = useState<MenuState | undefined>(undefined);
   const [readingBackup, setReadingBackup] = useState(false);
   const readRequest = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -64,15 +67,18 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
 
   const restoreBackup = () => {
     if (!backupPreview) return;
+    const beforeRestore = exportBackup(data);
     try {
       // Save the current snapshot before replacing it; never write inside a state updater.
-      localStorage.setItem('fitfood:v1:before-restore', JSON.stringify(data));
+      localStorage.setItem('fitfood:v1:before-restore', JSON.stringify(beforeRestore));
+      if (backupPreview.modules?.menu) replaceMenuState(backupPreview.modules.menu);
     } catch {
       setBackupError('backup.error.save');
       return;
     }
     const restored = backupPreview.data;
     setUndoData(data);
+    setUndoMenu(beforeRestore.modules?.menu);
     setData(() => restored);
     setBackupPreview(null);
     setBackupError(null);
@@ -216,6 +222,7 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
             <ul className="space-y-1">
               <li>{t('backup.mealDays', { count: Object.keys(backupPreview.data.mealLog).length })}</li>
               <li>{t('backup.workoutDays', { count: Object.keys(backupPreview.data.weeklyLog).length })}</li>
+              <li>{t('backup.preview.menuDays', { count: backupPreview.modules?.menu?.days.length ?? 0 })}</li>
               <li>{t(backupPreview.data.profile ? 'backup.hasGoals' : 'backup.noGoals')}</li>
               <li className="break-words">{t('backup.exportedAt', { date: formatDate(new Date(backupPreview.exportedAt), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) })}</li>
             </ul>
@@ -229,7 +236,7 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
         {(backupMessage || undoData) && (
           <div role="status" className="flex min-h-11 items-center justify-between gap-3 rounded-[14px] bg-food/10 px-3 text-sm text-food">
             <span>{t(undoData ? 'backup.restored' : backupMessage!)}</span>
-            {undoData && <button type="button" className="min-h-11 shrink-0 font-bold" onClick={() => { const previous = undoData; setData(() => previous); setUndoData(null); setBackupMessage('backup.undone'); }}>{t('backup.undo')}</button>}
+            {undoData && <button type="button" className="min-h-11 shrink-0 font-bold" onClick={() => { const previous = undoData; try { if (undoMenu) replaceMenuState(undoMenu); } catch { setBackupError('backup.error.save'); return; } setData(() => previous); setUndoData(null); setUndoMenu(undefined); setBackupMessage('backup.undone'); }}>{t('backup.undo')}</button>}
           </div>
         )}
       </section>

@@ -2,9 +2,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { exportBackup, getBackupFilename, parseBackup } from './backup';
 import { createDefaultData } from './storage';
 import { deliverBackupFile } from './ui/ErrorBoundary';
+import { MENU_REPLACED_EVENT, MENU_STORAGE_KEY, replaceMenuState } from './food/menu/menuStore';
 
 const exportedAt = new Date('2026-11-12T20:30:00.000Z');
 const dateKey = '2026-11-12';
+
+beforeEach(() => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, String(value)),
+    removeItem: (key: string) => values.delete(key),
+    clear: () => values.clear(),
+    key: (index: number) => [...values.keys()][index] ?? null,
+    get length() { return values.size; },
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function fixture() {
   const data = structuredClone(createDefaultData());
@@ -21,7 +38,7 @@ describe('exportBackup and parseBackup', () => {
     const data = fixture();
     const before = structuredClone(data);
     const backup = exportBackup(data, exportedAt);
-    expect(backup).toEqual({ app: 'fitfood', schemaVersion: 2, exportedAt: exportedAt.toISOString(), data });
+    expect(backup).toMatchObject({ app: 'fitfood', schemaVersion: 2, exportedAt: exportedAt.toISOString(), data, modules: { menu: { version: 1 } } });
     expect(parseBackup(JSON.stringify(backup))).toEqual({ ok: true, backup });
     expect(data).toEqual(before);
   });
@@ -117,14 +134,57 @@ describe('exportBackup and parseBackup', () => {
     expect(result.backup.data.dishes.some((dish) => dish.id === 'dish-tomato-egg')).toBe(false);
   });
 
-  it('does not read or write localStorage when parsing or exporting', () => {
-    const getItem = vi.fn(() => { throw new Error('No storage access allowed'); });
+  it('reads and sanitizes the menu module without writing localStorage', () => {
     const setItem = vi.fn(() => { throw new Error('No storage access allowed'); });
-    vi.stubGlobal('localStorage', { getItem, setItem });
+    vi.stubGlobal('localStorage', { getItem: vi.fn((key: string) => key === MENU_STORAGE_KEY ? JSON.stringify({ version: 1, weekStart: '2026-11-09', days: [] }) : null), setItem });
     try {
-      expect(parseBackup(JSON.stringify(exportBackup(fixture(), exportedAt))).ok).toBe(true);
-      expect(getItem).not.toHaveBeenCalled();
+      expect(exportBackup(fixture(), exportedAt).modules?.menu?.weekStart).toBe('2026-11-09');
       expect(setItem).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('round-trips a menu module exactly', () => {
+    const menu = { version: 1, weekStart: '2026-11-09', days: [{ dateKey: '2026-11-10', meals: [{ meal: 'lunch', dishId: 'dish-tomato-egg', locked: true }], overTarget: false }], checked: ['ing-egg'], extras: [{ id: 'extra-1', text: 'Milk', checked: false }] };
+    vi.stubGlobal('localStorage', { getItem: vi.fn(() => JSON.stringify(menu)), setItem: vi.fn() });
+    try {
+      const backup = exportBackup(fixture(), exportedAt);
+      expect(parseBackup(JSON.stringify(backup))).toEqual({ ok: true, backup });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps a legacy backup without a menu module compatible', () => {
+    const backup = exportBackup(fixture(), exportedAt);
+    const { modules: _modules, ...legacy } = backup;
+    const result = parseBackup(JSON.stringify(legacy));
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('Expected a valid legacy backup');
+    expect(result.backup.modules).toBeUndefined();
+  });
+
+  it('cleans a corrupt menu module', () => {
+    const backup = exportBackup(fixture(), exportedAt);
+    const result = parseBackup(JSON.stringify({ ...backup, modules: { menu: { version: 1, weekStart: 'bad', days: [{ dateKey: 'bad', meals: [{}] }], checked: [1, 'ok'], extras: [{ id: 1, text: null }] } } }));
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('Expected a repairable module');
+    expect(result.backup.modules?.menu).toEqual({ version: 1, weekStart: '', days: [], checked: ['ok'], extras: [] });
+  });
+
+  it('replaces a sanitized menu and notifies active menu stores', () => {
+    const setItem = vi.fn();
+    const eventTarget = new EventTarget();
+    const listener = vi.fn();
+    eventTarget.addEventListener(MENU_REPLACED_EVENT, listener);
+    vi.stubGlobal('localStorage', { setItem });
+    vi.stubGlobal('window', eventTarget);
+    try {
+      const menu = replaceMenuState({ version: 1, weekStart: 'invalid', days: [{ dateKey: 'bad', meals: [{}] }], checked: [1, 'checked'], extras: [{ id: 1, text: null }] });
+      expect(menu).toEqual({ version: 1, weekStart: '', days: [], checked: ['checked'], extras: [] });
+      expect(setItem).toHaveBeenCalledWith(MENU_STORAGE_KEY, JSON.stringify(menu));
+      expect(listener).toHaveBeenCalledOnce();
     } finally {
       vi.unstubAllGlobals();
     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { MenuExtra, MenuState, PlannedDay, PlannedMeal } from './menuTypes';
 
 export const MENU_STORAGE_KEY = 'fitfood:menu:v1';
+export const MENU_REPLACED_EVENT = 'fitfood:menu-replaced';
 
 function isDateKey(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -48,20 +49,30 @@ export function removeMenuExtra(state: MenuState, id: string): MenuState {
 export function parseMenuState(raw: string | null): MenuState {
   if (!raw) return emptyMenuState();
   try {
-    const value: unknown = JSON.parse(raw);
-    if (!value || typeof value !== 'object') return emptyMenuState();
-    const item = value as Record<string, unknown>;
-    if (item.version !== 1) return emptyMenuState();
-    return {
-      version: 1,
-      weekStart: isDateKey(item.weekStart) ? item.weekStart : '',
-      days: Array.isArray(item.days) ? item.days.map(readDay).filter((day): day is PlannedDay => day !== null) : [],
-      checked: Array.isArray(item.checked) ? item.checked.filter((id): id is string => typeof id === 'string') : [],
-      extras: Array.isArray(item.extras) ? item.extras.map(readExtra).filter((extra): extra is MenuExtra => extra !== null) : [],
-    };
+    return sanitizeMenuState(JSON.parse(raw));
   } catch {
     return emptyMenuState();
   }
+}
+
+export function sanitizeMenuState(raw: unknown): MenuState {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return emptyMenuState();
+  const item = raw as Record<string, unknown>;
+  if (item.version !== 1) return emptyMenuState();
+  return {
+    version: 1,
+    weekStart: isDateKey(item.weekStart) ? item.weekStart : '',
+    days: Array.isArray(item.days) ? item.days.map(readDay).filter((day): day is PlannedDay => day !== null) : [],
+    checked: Array.isArray(item.checked) ? item.checked.filter((id): id is string => typeof id === 'string') : [],
+    extras: Array.isArray(item.extras) ? item.extras.map(readExtra).filter((extra): extra is MenuExtra => extra !== null) : [],
+  };
+}
+
+export function replaceMenuState(state: unknown): MenuState {
+  const menu = sanitizeMenuState(state);
+  localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(menu));
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(MENU_REPLACED_EVENT));
+  return menu;
 }
 
 function loadMenuState(): MenuState {
@@ -74,6 +85,11 @@ function loadMenuState(): MenuState {
 
 export function useMenuStore() {
   const [menu, setMenu] = useState<MenuState>(loadMenuState);
+  useEffect(() => {
+    const reload = () => setMenu(loadMenuState());
+    window.addEventListener(MENU_REPLACED_EVENT, reload);
+    return () => window.removeEventListener(MENU_REPLACED_EVENT, reload);
+  }, []);
   useEffect(() => {
     try {
       localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(menu));
