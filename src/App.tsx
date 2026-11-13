@@ -17,6 +17,7 @@ function AppContent() {
   const { t } = useLang();
   const [data, setData] = useAppData();
   const [tab, setTab] = useState<'today' | 'food' | 'fit'>('today');
+  const [fitnessInitialTab, setFitnessInitialTab] = useState<'strength' | undefined>(undefined);
 
   return (
     <div className="min-h-[100dvh]">
@@ -30,7 +31,15 @@ function AppContent() {
             transition={{ duration: 0.2 }}
           >
             {tab === 'today' ? (
-              <TodayPage data={data} setData={setData} onOpenFood={() => setTab('food')} />
+              <TodayPage
+                data={data}
+                setData={setData}
+                onOpenFood={() => setTab('food')}
+                onOpenStrength={() => {
+                  setFitnessInitialTab('strength');
+                  setTab('fit');
+                }}
+              />
             ) : tab === 'food' ? (
               <FoodPage data={data} setData={setData} />
             ) : (
@@ -41,13 +50,16 @@ function AppContent() {
                   <div className="h-40 animate-pulse rounded-[20px] bg-surface-2" />
                 </div>
               }>
-                <FitnessPage data={data} setData={setData} />
+                <FitnessPage data={data} setData={setData} initialTab={fitnessInitialTab} />
               </Suspense>
             )}
           </motion.div>
         </AnimatePresence>
       </main>
-      <BottomNav tab={tab} onChange={setTab} />
+      <BottomNav tab={tab} onChange={(next) => {
+        setFitnessInitialTab(undefined);
+        setTab(next);
+      }} />
     </div>
   );
 }

@@ -6,11 +6,14 @@ import { useLang } from '../i18n/LanguageContext';
 import { getDailyTargets, getLocalDateKey, getStreak, getTodayNutrition } from '../stats';
 import { useTodayText } from './useTodayText';
 import { useMenuStore } from '../food/menu/menuStore';
+import { loadWorkoutState } from '../fitness/workout/workoutStore';
+import { completedSetCount, sessionVolume } from '../fitness/workout/workoutUtils';
 
 interface TodayPageProps {
   data: AppData;
   setData: (next: AppData | ((previous: AppData) => AppData)) => void;
   onOpenFood: () => void;
+  onOpenStrength: () => void;
 }
 
 function useTodayDate() {
@@ -75,7 +78,7 @@ function currentMondayKey(date: Date) {
   return getLocalDateKey(monday);
 }
 
-export function TodayPage({ data, setData, onOpenFood }: TodayPageProps) {
+export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPageProps) {
   const today = useTodayDate();
   const { formatDate, t, tCardio, tDish } = useLang();
   const tt = useTodayText();
@@ -90,6 +93,14 @@ export function TodayPage({ data, setData, onOpenFood }: TodayPageProps) {
   const strengthName = strength ? t('strength.focusPlan', { focus: t(`strength.focus.${strength.focus}`) }) : null;
   const isRestDay = !schedule || (schedule.cardioPlanId === null && schedule.strengthFocus === null);
   const completed = data.weeklyLog[todayKey] === true;
+  const workout = loadWorkoutState();
+  const todaySessions = workout.sessions.filter((session) =>
+    session.endedAt !== undefined && getLocalDateKey(new Date(session.endedAt)) === todayKey,
+  );
+  const recordedSets = todaySessions.reduce((total, session) => total + completedSetCount(session), 0);
+  const recordedVolume = Number(
+    todaySessions.reduce((total, session) => total + sessionVolume(session), 0).toFixed(1),
+  );
   const streak = getStreak(data, today);
   const hour = today.getHours();
   const greeting = hour < 11 ? tt('today.greeting.morning') : hour < 18 ? tt('today.greeting.afternoon') : tt('today.greeting.evening');
@@ -187,12 +198,28 @@ export function TodayPage({ data, setData, onOpenFood }: TodayPageProps) {
             {isRestDay ? <p className="mt-1 text-xs text-muted">{tt('today.restHint')}</p> : <div className="mt-1 space-y-0.5 text-xs text-muted">{cardioName && <p className="truncate"><span className="font-semibold text-fit">{tt('today.cardio')} · </span>{cardioName}</p>}{strengthName && <p className="truncate"><span className="font-semibold text-fit">{tt('today.strength')} · </span>{strengthName}</p>}</div>}
           </div>
           {isRestDay ? <span className="shrink-0 rounded-full bg-surface-2 px-3 py-2 text-xs font-bold text-muted">{tt('today.rest')}</span> : (
-            // TODO(T4): Open the detailed workout-record flow when it is integrated.
             <button type="button" aria-pressed={completed} onClick={toggleCompleted} className={`flex h-11 shrink-0 items-center gap-1.5 rounded-[14px] px-3 text-xs font-bold text-white transition-transform active:scale-[0.97] ${completed ? 'bg-ok' : 'bg-fit'}`}>
               {completed && <Check size={16} aria-hidden="true" />}{completed ? tt('today.checkedIn') : tt('today.checkIn')}
             </button>
           )}
         </div>
+        {todaySessions.length > 0 && (
+          <p className="mt-2 text-xs font-semibold text-fit tabular-nums">
+            {tt('today.strengthRecorded', { sets: recordedSets, volume: recordedVolume })}
+          </p>
+        )}
+        {(workout.active !== null || (Boolean(schedule?.strengthFocus) && todaySessions.length === 0)) && (
+          <button
+            type="button"
+            onClick={onOpenStrength}
+            className={
+              'mt-2 h-11 w-full rounded-[14px] bg-fit text-sm font-bold text-white ' +
+              'transition-transform active:scale-[0.97]'
+            }
+          >
+            {tt(workout.active ? 'today.resumeStrength' : 'today.startStrength')}
+          </button>
+        )}
       </Card>
 
       <section className="pb-2">

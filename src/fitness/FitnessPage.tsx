@@ -12,6 +12,7 @@ import { LanguageButton, useLang } from '../i18n/LanguageContext';
 interface FitnessPageProps {
   data: AppData;
   setData: (next: AppData | ((previous: AppData) => AppData)) => void;
+  initialTab?: 'weekly' | 'cardio' | 'strength';
 }
 
 const fitnessTabs = [
@@ -103,9 +104,9 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
   );
 }
 
-export function FitnessPage({ data, setData }: FitnessPageProps) {
+export function FitnessPage({ data, setData, initialTab }: FitnessPageProps) {
   const { t } = useLang();
-  const [activeTab, setActiveTab] = useState('weekly');
+  const [activeTab, setActiveTab] = useState<string>(initialTab ?? 'weekly');
 
   return (
     <main className="space-y-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)]">
