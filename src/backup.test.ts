@@ -3,6 +3,7 @@ import { exportBackup, getBackupFilename, parseBackup } from './backup';
 import { createDefaultData } from './storage';
 import { deliverBackupFile } from './ui/ErrorBoundary';
 import { MENU_REPLACED_EVENT, MENU_STORAGE_KEY, replaceMenuState } from './food/menu/menuStore';
+import { WORKOUT_STORAGE_KEY } from './fitness/workout/workoutStore';
 
 const exportedAt = new Date('2026-11-12T20:30:00.000Z');
 const dateKey = '2026-11-12';
@@ -154,6 +155,87 @@ describe('exportBackup and parseBackup', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('round-trips complete workout history and an active session exactly', () => {
+    const workouts = {
+      version: 1 as const,
+      sessions: [{
+        id: 'finished-workout', startedAt: 100, endedAt: 200,
+        entries: [{ exerciseId: 'machine-chest-press', sets: [
+          { weightKg: 42.5, reps: 8, done: true },
+          { weightKg: 40, reps: 10, done: false },
+        ] }],
+      }],
+      active: {
+        id: 'active-workout', startedAt: 300, restEndsAt: 360,
+        entries: [{ exerciseId: 'machine-chest-press', sets: [{ weightKg: 45, reps: 6, done: true }] }],
+        pending: [{ name: 'Custom press', sets: 3 }],
+      },
+    };
+    localStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(workouts));
+    const backup = exportBackup(fixture(), exportedAt);
+    expect(backup.modules?.workouts).toEqual(workouts);
+    const parsed = parseBackup(JSON.stringify(backup));
+    expect(parsed).toEqual({ ok: true, backup });
+    if (!parsed.ok) throw new Error('Expected a valid workout backup');
+    expect(parsed.backup.modules?.workouts).toEqual(workouts);
+  });
+
+  it.each(['{invalid', JSON.stringify({ version: 2, sessions: [], active: null })])(
+    'exports empty workouts when stored workout data is malformed: %s',
+    (raw) => {
+      localStorage.setItem(WORKOUT_STORAGE_KEY, raw);
+      expect(exportBackup(fixture(), exportedAt).modules?.workouts)
+        .toEqual({ version: 1, sessions: [], active: null });
+    },
+  );
+
+  it('keeps a legacy backup without workouts compatible', () => {
+    const backup = exportBackup(fixture(), exportedAt);
+    const result = parseBackup(JSON.stringify({ ...backup, modules: { menu: backup.modules?.menu } }));
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('Expected a valid legacy backup');
+    expect(result.backup.modules).not.toHaveProperty('workouts');
+  });
+
+  it('validates damaged workout records individually without rejecting the backup', () => {
+    const validSession = {
+      id: 'valid-workout', startedAt: 100, endedAt: 200,
+      entries: [{ exerciseId: 'machine-chest-press', sets: [{ weightKg: 42.5, reps: 8, done: true }] }],
+    };
+    const backup = exportBackup(fixture(), exportedAt);
+    const result = parseBackup(JSON.stringify({
+      ...backup,
+      modules: {
+        ...backup.modules,
+        workouts: {
+          version: 1,
+          sessions: [
+            validSession,
+            { id: 'invalid-workout', startedAt: -1, entries: [] },
+            { id: 'partly-valid', startedAt: 300, entries: [
+              { exerciseId: 'unknown-exercise', sets: [] },
+              { exerciseId: 'machine-chest-press', sets: [
+                { weightKg: 20, reps: 12, done: true },
+                { weightKg: -1, reps: 8, done: true },
+              ] },
+            ] },
+          ],
+          active: null,
+        },
+      },
+    }));
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('Expected a repairable workout backup');
+    expect(result.backup.modules?.workouts).toEqual({
+      version: 1,
+      sessions: [validSession, {
+        id: 'partly-valid', startedAt: 300,
+        entries: [{ exerciseId: 'machine-chest-press', sets: [{ weightKg: 20, reps: 12, done: true }] }],
+      }],
+      active: null,
+    });
   });
 
   it('keeps a legacy backup without a menu module compatible', () => {

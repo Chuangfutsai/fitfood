@@ -2,11 +2,12 @@ import type { AppData } from './types';
 import { CURRENT_SCHEMA_VERSION, normalizeAppData, UnsupportedDataVersionError } from './storage';
 import { emptyMenuState, MENU_STORAGE_KEY, sanitizeMenuState } from './food/menu/menuStore';
 import type { MenuState } from './food/menu/menuTypes';
+import { validateWorkoutState, WORKOUT_STORAGE_KEY } from './fitness/workout/workoutStore';
+import type { WorkoutState } from './fitness/workout/types';
 
 export interface BackupModules {
   menu?: MenuState;
-  // TODO(T4): Add validated workout backup support when the workout module is ready.
-  workouts?: unknown;
+  workouts?: WorkoutState;
 }
 
 export interface BackupEnvelope {
@@ -28,7 +29,17 @@ export function exportBackup(data: AppData, now: Date = new Date()): BackupEnvel
   } catch {
     // A blocked or malformed module store must not block a main-data backup.
   }
-  return { app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: now.toISOString(), data, modules: { menu } };
+  let workouts = validateWorkoutState(null);
+  try {
+    const raw = localStorage.getItem(WORKOUT_STORAGE_KEY);
+    if (raw) workouts = validateWorkoutState(JSON.parse(raw));
+  } catch {
+    // A blocked or malformed module store must not block a main-data backup.
+  }
+  return {
+    app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: now.toISOString(),
+    data, modules: { menu, workouts },
+  };
 }
 
 export function getBackupFilename(now: Date = new Date()): string {
@@ -65,7 +76,14 @@ export function parseBackup(text: string): BackupResult {
     const modules = envelope.modules && typeof envelope.modules === 'object' && !Array.isArray(envelope.modules)
       ? (() => {
         const rawModules = envelope.modules as Record<string, unknown>;
-        return { ...(Object.prototype.hasOwnProperty.call(rawModules, 'menu') ? { menu: sanitizeMenuState(rawModules.menu) } : {}) };
+        return {
+          ...(Object.prototype.hasOwnProperty.call(rawModules, 'menu')
+            ? { menu: sanitizeMenuState(rawModules.menu) }
+            : {}),
+          ...(Object.prototype.hasOwnProperty.call(rawModules, 'workouts')
+            ? { workouts: validateWorkoutState(rawModules.workouts) }
+            : {}),
+        };
       })()
       : undefined;
     return {
