@@ -22,6 +22,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: null,
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,woff2}'],
+      },
       manifest: {
         name: 'FitFood',
         short_name: 'FitFood',

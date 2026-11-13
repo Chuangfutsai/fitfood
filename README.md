@@ -11,7 +11,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite_8-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/tests-54_passing-22C55E?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/tests-206_passing-22C55E?style=flat-square&logo=vitest&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-EN_|_Traditional_Chinese-F97316?style=flat-square)
 
 </div>
@@ -35,6 +35,8 @@
 - Full English / Traditional Chinese support, including every recipe and workout plan
 - Privacy first — all data stays on your device, nothing is uploaded
 - Installable as a PWA
+- Data backup — export and restore your data as a file
+- Works offline
 
 ---
 
@@ -63,8 +65,8 @@
 |---|---|---|
 | A1 | Check-in, meal log, undo, data validation, unit tests | ✅ |
 | A3 | 8 cardio machines, 24 workout plans | ✅ |
-| M1 + T2 | Breakfast / lunch / dinner, breakfast recipes, goal setup, daily calorie indicator | 🔄 |
-| T1 + T5 | Engineering foundation, data export / import | ⬜ |
+| M1 + T2 | Breakfast / lunch / dinner, breakfast recipes, goal setup, daily calorie indicator | ✅ |
+| T1 + T5 | Engineering foundation, data export / import | ✅ |
 | T3 | Weekly meal plan + auto shopping list | ⬜ |
 | T4 | Live strength logging (weight, reps, rest timer) | ⬜ |
 | T6 | "Today" dashboard home screen | ⬜ |
