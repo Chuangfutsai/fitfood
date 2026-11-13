@@ -193,7 +193,11 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
     if (!open) return;
     const profile = data.profile;
     setSex(profile?.sex ?? 'male');
-    setValues({ age: profile ? String(profile.age) : '', heightCm: profile ? String(profile.heightCm) : '', weightKg: profile ? String(profile.weightKg) : '' });
+    setValues({
+      age: profile ? String(profile.age) : '',
+      heightCm: profile ? String(profile.heightCm) : '',
+      weightKg: profile ? String(profile.weightKg) : ''
+    });
     setActivity(profile?.activity ?? 1.2);
     setDeficit(profile?.deficit ?? 0.2);
     setTouched({});
@@ -213,13 +217,24 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
     return [field, error];
   })) as Record<Measurement, string | null>;
   const valid = measurements.every((field) => errors[field] === null);
-  const profile: Profile = { sex, age: Number(values.age), heightCm: Number(values.heightCm), weightKg: Number(values.weightKg), activity, deficit };
+  const profile: Profile = {
+    sex,
+    age: Number(values.age),
+    heightCm: Number(values.heightCm),
+    weightKg: Number(values.weightKg),
+    activity,
+    deficit
+  };
   const targets = valid ? getDailyTargets(profile) : null;
 
   const save = () => {
     if (!valid) return;
     const dateKey = getLocalDateKey(new Date());
-    setData((previous) => ({ ...previous, profile, weightLog: { ...previous.weightLog, [dateKey]: profile.weightKg } }));
+    setData((previous) => ({
+      ...previous,
+      profile,
+      weightLog: { ...previous.weightLog, [dateKey]: profile.weightKg }
+    }));
     onClose();
   };
 
@@ -230,7 +245,15 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
           <legend className="text-sm font-semibold text-text">{t('goals.sex')}</legend>
           <div className="grid grid-cols-2 gap-2">
             {(['male', 'female'] as const).map((value) => (
-              <button key={value} type="button" aria-pressed={sex === value} onClick={() => setSex(value)} className={`h-11 rounded-[14px] border text-sm font-semibold ${sex === value ? 'border-food bg-food text-white' : 'border-line bg-surface text-muted'}`}>
+              <button
+                key={value}
+                type="button"
+                aria-pressed={sex === value}
+                onClick={() => setSex(value)}
+                className={`h-11 rounded-[14px] border text-sm font-semibold ${
+                  sex === value ? 'border-food bg-food text-white' : 'border-line bg-surface text-muted'
+                }`}
+              >
                 {t(`goals.sex.${value}`)}
               </button>
             ))}
@@ -242,7 +265,12 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
             const showError = errors[field] && (touched[field] || values[field] !== '');
             return (
               <div key={field} className="min-w-0 space-y-1.5">
-                <label htmlFor={`${fieldId}-${field}`} className="block text-xs font-semibold text-text">{t(`goals.${field}`)}</label>
+                <label
+                  htmlFor={`${fieldId}-${field}`}
+                  className="block text-xs font-semibold text-text"
+                >
+                  {t(`goals.${field}`)}
+                </label>
                 <input
                   id={`${fieldId}-${field}`}
                   type="number"
@@ -255,9 +283,17 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
                   onBlur={() => setTouched((previous) => ({ ...previous, [field]: true }))}
                   aria-invalid={Boolean(showError)}
                   aria-describedby={showError ? `${fieldId}-${field}-error` : undefined}
-                  className={`h-11 w-full min-w-0 rounded-[12px] border bg-surface px-2 text-base text-text tabular-nums outline-none focus:border-food ${showError ? 'border-tomato-ink' : 'border-line'}`}
+                  className={`h-11 w-full min-w-0 rounded-[12px] border bg-surface px-2 text-base text-text
+                    tabular-nums outline-none focus:border-food ${showError ? 'border-tomato-ink' : 'border-line'}`}
                 />
-                {showError && <p id={`${fieldId}-${field}-error`} className="break-words text-xs leading-4 text-tomato-ink">{t(errors[field]!)}</p>}
+                {showError &&
+                  <p
+                    id={`${fieldId}-${field}-error`}
+                    className="break-words text-xs leading-4 text-tomato-ink"
+                  >
+                    {t(errors[field]!)}
+                  </p>
+                }
               </div>
             );
           })}
@@ -267,8 +303,21 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
           <legend className="text-sm font-semibold text-text">{t('goals.activity')}</legend>
           <div className="space-y-1">
             {activityLevels.map((value, index) => (
-              <label key={value} className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-[12px] border px-3 py-2 text-xs leading-5 ${activity === value ? 'border-food bg-food/10 text-food' : 'border-line text-text'}`}>
-                <input type="radio" name={`${fieldId}-activity`} value={value} checked={activity === value} onChange={() => setActivity(value)} className="h-4 w-4 shrink-0 accent-food" />
+              <label
+                key={value}
+                className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-[12px] border px-3 py-2
+                  text-xs leading-5 ${activity === value
+                    ? 'border-food bg-food/10 text-food'
+                    : 'border-line text-text'}`}
+              >
+                <input
+                  type="radio"
+                  name={`${fieldId}-activity`}
+                  value={value}
+                  checked={activity === value}
+                  onChange={() => setActivity(value)}
+                  className="h-4 w-4 shrink-0 accent-food"
+                />
                 <span>{t(`goals.activity.${index}`)}</span>
               </label>
             ))}
@@ -301,7 +350,9 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
           {(['bmr', 'kcal', 'proteinG'] as const).map((key) => (
             <div key={key} className="min-w-0 space-y-1">
               <p className="text-xs leading-4">{t(`goals.result.${key}`)}</p>
-              <p className="text-lg font-bold tabular-nums">{targets ? Math.round(targets[key]) : t('goals.pending')}</p>
+              <p className="text-lg font-bold tabular-nums">
+                {targets ? Math.round(targets[key]) : t('goals.pending')}
+              </p>
               <p className="text-xs leading-4">
                 {t(key === 'proteinG' ? 'goals.grams' : 'goals.kcalUnit')}
               </p>
@@ -309,17 +360,43 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
           ))}
         </div>
         <p className="text-xs leading-5 text-muted">{t('goals.disclaimer')}</p>
-        <button type="submit" disabled={!valid} className="h-12 w-full rounded-[14px] bg-food text-sm font-semibold text-white disabled:bg-surface-2 disabled:text-muted">
+        <button
+          type="submit"
+          disabled={!valid}
+          className="h-12 w-full rounded-[14px] bg-food text-sm font-semibold text-white
+            disabled:bg-surface-2 disabled:text-muted"
+        >
           {t('goals.save')}
         </button>
       </form>
       <section className="mt-6 space-y-3 border-t border-line pt-5">
         <h3 className="text-lg font-bold text-text">{t('backup.title')}</h3>
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={downloadBackup} className="min-h-11 min-w-0 rounded-[14px] border border-line bg-surface px-3 text-sm font-semibold text-food">{t('backup.export')}</button>
-          <button type="button" onClick={() => fileInput.current?.click()} className="min-h-11 min-w-0 rounded-[14px] border border-line bg-surface px-3 text-sm font-semibold text-food">{t('backup.restore')}</button>
+          <button
+            type="button"
+            onClick={downloadBackup}
+            className="min-h-11 min-w-0 rounded-[14px] border border-line bg-surface px-3
+              text-sm font-semibold text-food"
+          >
+            {t('backup.export')}
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            className="min-h-11 min-w-0 rounded-[14px] border border-line bg-surface px-3
+              text-sm font-semibold text-food"
+          >
+            {t('backup.restore')}
+          </button>
         </div>
-        <input ref={fileInput} type="file" accept=".json,application/json" aria-label={t('backup.restore')} onChange={readBackup} className="hidden" />
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".json,application/json"
+          aria-label={t('backup.restore')}
+          onChange={readBackup}
+          className="hidden"
+        />
         {readingBackup && <p role="status" className="text-sm text-muted">{t('backup.reading')}</p>}
         {backupError && <p role="alert" className="break-words text-sm leading-6 text-tomato-ink">{t(backupError)}</p>}
         {backupPreview && (
@@ -331,17 +408,39 @@ export function GoalSheet({ open, onClose, data, setData }: GoalSheetProps) {
               <li>{t('backup.preview.menuDays', { count: backupPreview.modules?.menu?.days.length ?? 0 })}</li>
               <li>{t('backup.preview.workouts', { count: backupPreview.modules?.workouts?.sessions.length ?? 0 })}</li>
               <li>{t(backupPreview.data.profile ? 'backup.hasGoals' : 'backup.noGoals')}</li>
-              <li className="break-words">{t('backup.exportedAt', { date: formatDate(new Date(backupPreview.exportedAt), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) })}</li>
+              <li className="break-words">
+                {t('backup.exportedAt', {
+                  date: formatDate(new Date(backupPreview.exportedAt), {
+                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                  })
+                })}
+              </li>
             </ul>
             <p className="text-xs leading-5 text-muted">{t('backup.replaceWarning')}</p>
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setBackupPreview(null)} className="min-h-11 rounded-[12px] border border-line bg-surface px-2 font-semibold">{t('backup.cancel')}</button>
-              <button type="button" onClick={restoreBackup} className="min-h-11 rounded-[12px] bg-food px-2 font-semibold text-white">{t('backup.confirm')}</button>
+              <button
+                type="button"
+                onClick={() => setBackupPreview(null)}
+                className="min-h-11 rounded-[12px] border border-line bg-surface px-2 font-semibold"
+              >
+                {t('backup.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={restoreBackup}
+                className="min-h-11 rounded-[12px] bg-food px-2 font-semibold text-white"
+              >
+                {t('backup.confirm')}
+              </button>
             </div>
           </div>
         )}
         {(backupMessage || undo) && (
-          <div role="status" className="flex min-h-11 items-center justify-between gap-3 rounded-[14px] bg-food/10 px-3 text-sm text-food">
+          <div
+            role="status"
+            className="flex min-h-11 items-center justify-between gap-3 rounded-[14px] bg-food/10
+              px-3 text-sm text-food"
+          >
             <span>{t(undo ? 'backup.restored' : backupMessage!)}</span>
             {undo && (
               <button type="button" className="min-h-11 shrink-0 font-bold" onClick={undoRestore}>

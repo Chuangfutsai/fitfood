@@ -1,6 +1,50 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AppData, MealEntry, Profile, WeeklyDay } from './types';
-import { getBMR, getCalorieStatus, getDailyTargets, getLocalDateKey, getMealForTime, getStreak, getTodayNutrition } from './stats';
+import {
+  getBMR,
+  getCalorieStatus,
+  getDailyTargets,
+  getLocalDateKey,
+  getMealForTime,
+  getStreak,
+  getTodayNutrition,
+  shuffle,
+} from './stats';
+
+describe('shuffle', () => {
+  it('returns a new permutation without changing the original array', () => {
+    const original = Object.freeze([1, 2, 3, 4]);
+    const shuffled = shuffle(original, () => 0);
+    expect(original).toEqual([1, 2, 3, 4]);
+    expect(shuffled).not.toBe(original);
+    expect([...shuffled].sort()).toEqual([...original].sort());
+  });
+
+  it('uses the supplied random values in Fisher-Yates order', () => {
+    const values = [0.25, 0.9, 0];
+    let call = 0;
+    expect(shuffle([1, 2, 3, 4], () => values[call++])).toEqual([4, 1, 3, 2]);
+    expect(call).toBe(3);
+  });
+
+  it('distributes three elements across all six permutations', () => {
+    const counts = new Map<string, number>();
+    for (let trial = 0; trial < 60_000; trial += 1) {
+      const key = shuffle([1, 2, 3]).join('');
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    expect(counts.size).toBe(6);
+    for (const count of counts.values()) {
+      expect(count).toBeGreaterThanOrEqual(9_500);
+      expect(count).toBeLessThanOrEqual(10_500);
+    }
+  });
+
+  it('handles empty and single-element arrays', () => {
+    expect(shuffle([])).toEqual([]);
+    expect(shuffle([42])).toEqual([42]);
+  });
+});
 
 function makeData(overrides: Partial<AppData> = {}): AppData {
   const weeklyPlan: WeeklyDay[] = ([0, 1, 2, 3, 4, 5, 6] as const).map((weekday) => ({

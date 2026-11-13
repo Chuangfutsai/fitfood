@@ -97,7 +97,7 @@ export function CardioPanel(_props: CardioPanelProps) {
               <button
                 key={machineOption}
                 type="button"
-                className="w-[120px] shrink-0 snap-start text-left transition-transform active:scale-[0.97]"
+                className="basis-[38%] shrink-0 snap-start text-left transition-transform active:scale-[0.97]"
                 aria-pressed={selected}
                 onClick={() => setMachine(machineOption)}
               >
@@ -122,11 +122,12 @@ export function CardioPanel(_props: CardioPanelProps) {
 
       <button
         type="button"
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-fit text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px]
+          bg-fit text-sm font-semibold text-white transition-transform active:scale-[0.97]"
         onClick={recommendPlan}
       >
         <Sparkles size={18} />
-        <span className="truncate">{t('cardio.recommend')}</span>
+        <span>{t('cardio.recommend')}</span>
       </button>
 
       <div className="space-y-3">
@@ -147,7 +148,10 @@ export function CardioPanel(_props: CardioPanelProps) {
                 }`}
               >
                 {recommended && (
-                  <span className="absolute right-4 top-4 max-w-[calc(100%-32px)] truncate rounded-full bg-fit/10 px-2 py-1 text-xs font-medium text-fit">
+                  <span className={
+                    'absolute right-4 top-4 max-w-[calc(100%-32px)] rounded-full ' +
+                    'bg-fit/10 px-2 py-1 text-xs font-medium text-fit'
+                  }>
                     {t('fitness.recommended')}
                   </span>
                 )}

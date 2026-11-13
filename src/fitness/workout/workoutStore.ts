@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { exerciseLibrary } from '../exerciseLibrary';
 import type { ActiveSession, Session, WorkoutEntry, WorkoutSet, WorkoutState } from './types';
 
@@ -163,5 +164,25 @@ export function replaceWorkoutState(state: unknown): WorkoutState {
   const workout = validateWorkoutState(state);
   if (!saveWorkoutState(workout)) throw new Error('Unable to replace workout state');
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(WORKOUT_REPLACED_EVENT));
+  return workout;
+}
+
+export function useWorkoutState(): WorkoutState {
+  const [workout, setWorkout] = useState(loadWorkoutState);
+
+  useEffect(() => {
+    const refresh = () => setWorkout(loadWorkoutState());
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === WORKOUT_STORAGE_KEY || event.key === null) refresh();
+    };
+
+    window.addEventListener(WORKOUT_REPLACED_EVENT, refresh);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(WORKOUT_REPLACED_EVENT, refresh);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
   return workout;
 }

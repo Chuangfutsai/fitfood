@@ -44,7 +44,11 @@ function AppContent() {
               <FoodPage data={data} setData={setData} />
             ) : (
               <Suspense fallback={
-                <div role="status" aria-label={t('common.loading')} className="space-y-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)]">
+                <div
+                  role="status"
+                  aria-label={t('common.loading')}
+                  className="space-y-5 px-5 pt-[calc(env(safe-area-inset-top)+20px)]"
+                >
                   <div className="h-[200px] animate-pulse rounded-[24px] bg-surface-2" />
                   <div className="h-11 animate-pulse rounded-[14px] bg-surface-2" />
                   <div className="h-40 animate-pulse rounded-[20px] bg-surface-2" />

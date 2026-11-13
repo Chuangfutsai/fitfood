@@ -11,7 +11,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite_8-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/tests-206_passing-22C55E?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/tests-667_passing-22C55E?style=flat-square&logo=vitest&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-EN_|_Traditional_Chinese-F97316?style=flat-square)
 
 </div>
@@ -21,7 +21,8 @@
 ## ✨ Features
 
 ### ☀️ Today
-- **Daily dashboard** — greeting, streak, calorie ring, protein bar, meal tiles with menu plans, workout check-in, and the last 7 days
+- **Daily dashboard** — greeting, streak, calorie ring, protein bar, meal tiles with menu plans,
+  workout check-in, and the last 7 days
 
 ### 🥗 Food
 - **Meal wheels by time of day** — breakfast, lunch, and dinner picks filtered by your pantry
@@ -33,7 +34,8 @@
 
 ### 🏃 Fitness
 - **6-day fat-loss schedule** — a weekly cardio-first plan with a recovery day
-- **8 cardio machines × 3 programs** — treadmill, stair climber, elliptical, spin bike, recumbent bike, rower, air bike, and SkiErg
+- **8 cardio machines × 3 programs** — treadmill, stair climber, elliptical, spin bike,
+  recumbent bike, rower, air bike, and SkiErg
 - **Strength training plans** — push, pull, legs, and full-body routines backed by a 40-exercise library
 
 ### 🌐 More

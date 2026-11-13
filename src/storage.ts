@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AppData, CardioPlan, Dish, Ingredient, KnownDefaultIds, Meal, MealEntry, Profile, StrengthFocus, StrengthPlan, WeeklyDay } from './types';
+import type {
+  AppData, CardioPlan, Dish, Ingredient, KnownDefaultIds, Meal, MealEntry, Profile,
+  StrengthFocus, StrengthPlan, WeeklyDay
+} from './types';
 import { getMealForTime } from './stats';
 import { recipes } from './food/recipes';
 import {
@@ -55,7 +58,10 @@ const LEGACY_DEFAULT_IDS: KnownDefaultIds = {
 };
 
 export class UnsupportedDataVersionError extends Error {
-  constructor() { super('Stored data was created by a newer FitFood version.'); this.name = 'UnsupportedDataVersionError'; }
+  constructor() {
+    super('Stored data was created by a newer FitFood version.');
+    this.name = 'UnsupportedDataVersionError';
+  }
 }
 
 export class InvalidAppDataError extends Error {
@@ -102,7 +108,8 @@ function migrateData(raw: unknown): Record<string, unknown> {
   if (!isRecord(raw)) throw new InvalidAppDataError();
   const rawVersion = raw.version === undefined ? 1 : raw.version;
   if (typeof rawVersion === 'number' && rawVersion > CURRENT_SCHEMA_VERSION) throw new UnsupportedDataVersionError();
-  if (typeof rawVersion !== 'number' || !Number.isInteger(rawVersion) || rawVersion < 1) throw new InvalidAppDataError();
+  if (typeof rawVersion !== 'number' || !Number.isInteger(rawVersion) || rawVersion < 1)
+    throw new InvalidAppDataError();
   let version: number = rawVersion;
   let data = { ...raw };
   while (version < CURRENT_SCHEMA_VERSION) {
@@ -307,7 +314,9 @@ function sanitizeStrengthPlans(raw: unknown): StrengthPlan[] {
     ),
   ).map(({ id, focus, name, exercises }) => ({
     id, focus, name,
-    exercises: exercises.map(({ name: exerciseName, sets, reps, restSec }) => ({ name: exerciseName, sets, reps, restSec })),
+    exercises: exercises.map(({ name: exerciseName, sets, reps, restSec }) => ({
+      name: exerciseName, sets, reps, restSec
+    })),
   }));
 }
 
@@ -360,7 +369,9 @@ export function normalizeAppData(raw: unknown): AppData {
     profile: sanitizeProfile(migrated.profile),
     weightLog: sanitizeWeightLog(migrated.weightLog),
   };
-  const cardioPlans = mergeDefaultsById(validated.cardioPlans, sanitizeCardioPlans(defaultCardioPlans), known.cardioPlans);
+  const cardioPlans = mergeDefaultsById(
+    validated.cardioPlans, sanitizeCardioPlans(defaultCardioPlans), known.cardioPlans
+  );
   const cardioIds = new Set(cardioPlans.map((plan) => plan.id));
   const current = currentDefaultIds();
   return {

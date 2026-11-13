@@ -1,8 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { WorkoutState } from './types';
+
+const hookRuntime = vi.hoisted(() => ({
+  state: undefined as WorkoutState | undefined,
+  effect: undefined as (() => void | (() => void)) | undefined,
+  updates: [] as WorkoutState[],
+}));
+
+vi.mock('react', () => ({
+  useState: (initializer: () => WorkoutState) => {
+    hookRuntime.state ??= initializer();
+    return [hookRuntime.state, (next: WorkoutState) => {
+      hookRuntime.state = next;
+      hookRuntime.updates.push(next);
+    }];
+  },
+  useEffect: (effect: () => void | (() => void)) => {
+    hookRuntime.effect = effect;
+  },
+}));
+
 import {
   loadWorkoutState,
   replaceWorkoutState,
   saveWorkoutState,
+  useWorkoutState,
   validateWorkoutState,
   WORKOUT_REPLACED_EVENT,
   WORKOUT_STORAGE_KEY,
@@ -42,6 +64,9 @@ function session(id: string, endedAt: number | undefined, sets: WorkoutSet[]): S
 
 beforeEach(() => {
   values = {};
+  hookRuntime.state = undefined;
+  hookRuntime.effect = undefined;
+  hookRuntime.updates = [];
   Object.defineProperty(globalThis, 'localStorage', {
     configurable: true,
     value: {
@@ -57,6 +82,59 @@ beforeEach(() => {
         delete values[key];
       },
     },
+  });
+});
+
+function storageEvent(key: string | null): StorageEvent {
+  const event = new Event('storage');
+  Object.defineProperty(event, 'key', { value: key });
+  return event as StorageEvent;
+}
+
+describe('useWorkoutState', () => {
+  it('loads stored workouts once while rendering again without an event', () => {
+    const stored = session('stored', 30, [completedSet(40, 8)]);
+    values[WORKOUT_STORAGE_KEY] = JSON.stringify({ version: 1, sessions: [stored], active: null });
+    const reads = vi.spyOn(localStorage, 'getItem');
+
+    expect(useWorkoutState().sessions).toEqual([stored]);
+    useWorkoutState();
+    expect(reads).toHaveBeenCalledTimes(1);
+    reads.mockRestore();
+  });
+
+  it('updates for replacement and relevant storage events, then removes listeners', () => {
+    const target = new EventTarget();
+    vi.stubGlobal('window', target);
+    try {
+      expect(useWorkoutState()).toEqual({ version: 1, sessions: [], active: null });
+      const cleanup = hookRuntime.effect?.();
+      expect(typeof cleanup).toBe('function');
+
+      const replaced = session('replaced', 30, [completedSet(40, 8)]);
+      replaceWorkoutState({ version: 1, sessions: [replaced], active: null });
+      expect(hookRuntime.state?.sessions).toEqual([replaced]);
+      expect(hookRuntime.updates).toHaveLength(1);
+
+      const changed = session('changed', 40, [completedSet(45, 8)]);
+      values[WORKOUT_STORAGE_KEY] = JSON.stringify({ version: 1, sessions: [changed], active: null });
+      target.dispatchEvent(storageEvent('fitfood:lang'));
+      expect(hookRuntime.updates).toHaveLength(1);
+      target.dispatchEvent(storageEvent(WORKOUT_STORAGE_KEY));
+      expect(hookRuntime.state?.sessions).toEqual([changed]);
+
+      values[WORKOUT_STORAGE_KEY] = JSON.stringify({ version: 1, sessions: [], active: null });
+      target.dispatchEvent(storageEvent(null));
+      expect(hookRuntime.state?.sessions).toEqual([]);
+      expect(hookRuntime.updates).toHaveLength(3);
+
+      if (typeof cleanup === 'function') cleanup();
+      target.dispatchEvent(new Event(WORKOUT_REPLACED_EVENT));
+      target.dispatchEvent(storageEvent(WORKOUT_STORAGE_KEY));
+      expect(hookRuntime.updates).toHaveLength(3);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

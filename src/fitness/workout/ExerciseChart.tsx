@@ -7,8 +7,8 @@ interface ExerciseChartProps {
 }
 
 const width = 320;
-const height = 184;
-const padding = { top: 24, right: 18, bottom: 32, left: 38 };
+const height = 208;
+const padding = { top: 24, right: 32, bottom: 56, left: 46 };
 
 export function ExerciseChart({ points }: ExerciseChartProps) {
   const { lang } = useLang();
@@ -86,7 +86,7 @@ export function ExerciseChart({ points }: ExerciseChartProps) {
           x={padding.left - 6}
           y={padding.top + 4}
           textAnchor="end"
-          className="fill-muted text-[10px]"
+          className="fill-muted text-[12px]"
         >
           {Math.round(maxWeight)}
         </text>
@@ -94,7 +94,7 @@ export function ExerciseChart({ points }: ExerciseChartProps) {
           x={padding.left - 6}
           y={padding.top + graphHeight + 4}
           textAnchor="end"
-          className="fill-muted text-[10px]"
+          className="fill-muted text-[12px]"
         >
           {Math.round(minWeight)}
         </text>
@@ -117,9 +117,10 @@ export function ExerciseChart({ points }: ExerciseChartProps) {
             />
             <text
               x={x(index)}
-              y={height - 10}
+              y={height - 26}
               textAnchor="middle"
-              className="fill-muted text-[9px]"
+              transform={`rotate(-45 ${x(index)} ${height - 26})`}
+              className="fill-muted text-[12px]"
             >
               {dateFormat.format(new Date(point.endedAt))}
             </text>
@@ -129,7 +130,7 @@ export function ExerciseChart({ points }: ExerciseChartProps) {
           x={x(highestIndex)}
           y={y(high) - 9}
           textAnchor="middle"
-          className="fill-fit text-[11px] font-bold"
+          className="fill-fit text-[13px] font-bold"
         >
           {high} kg
         </text>

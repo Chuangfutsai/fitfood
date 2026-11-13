@@ -73,8 +73,6 @@ const shortButtonAndChipKeys = [
   'dishes.delete',
   'dishes.deletedIngredient',
   'unit.minutes',
-  'recipe.energy',
-  'recipe.protein',
   'menu.plan',
   'menu.replan',
   'menu.view.menu',
@@ -123,6 +121,8 @@ const descriptiveButtonKeys = [
   'today.goalHint',
   'food.meals.summary',
   'food.meals.summaryOne',
+  'recipe.energy',
+  'recipe.protein',
 ] as const;
 
 const workoutButtonAndChipKeys = [
@@ -147,6 +147,10 @@ const workoutButtonAndChipKeys = [
   'finish.continue',
   'history.delete',
   'minutes',
+  'continue',
+  'picker.title',
+  'rest',
+  'equipment',
   'rest.decrease',
   'rest.increase',
   'skip',
@@ -174,6 +178,25 @@ describe('strings', () => {
     expect(Object.keys(strings).length).toBeGreaterThan(0);
   });
 
+  it('includes the recipe and workout text in the unified table', () => {
+    const workoutKeys = Object.keys(strings).filter((key) => key.startsWith('workout.'));
+    const recipeKeys = Object.keys(strings).filter((key) => key.startsWith('recipe.'));
+
+    expect(workoutKeys).toHaveLength(82);
+    expect(recipeKeys).toHaveLength(16);
+    expect(strings['recipe.energy'].en).toBe('~{count} kcal (estimate)');
+    expect(strings['recipe.protein'].en).toBe('~{count} g protein (estimate)');
+
+    for (const key of workoutKeys) {
+      const shortKey = key.slice('workout.'.length);
+      expect(workoutText('zh-Hant', shortKey), key).toBe(strings[key]['zh-Hant']);
+      expect(workoutText('en', shortKey), key).toBe(strings[key].en);
+    }
+
+    expect(workoutText('en', 'last', { weight: 30, reps: 8 })).toBe('Last: 30 kg × 8');
+    expect(workoutText('en', 'missing')).toBe('missing');
+  });
+
   it.each(Object.entries(strings))('%s has complete, consistent bilingual text', (_key, translation) => {
     const traditional = translation['zh-Hant'];
     const english = translation.en;
@@ -198,7 +221,6 @@ describe('strings', () => {
       expect(english, key).not.toBe(key);
       expect(english.length, key).toBeLessThanOrEqual(24);
     }
-
   });
 
   it('keeps full English descriptions and screen-reader labels', () => {

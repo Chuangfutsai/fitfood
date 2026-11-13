@@ -102,13 +102,14 @@ export function PantryList({ data, setData }: PantryListProps) {
                       key={ingredient.id}
                       className="flex min-h-11 items-center gap-3 py-2"
                     >
-                      <p className="min-w-0 flex-1 truncate text-[15px] text-text">
+                      <p className="min-w-0 flex-1 break-words text-[15px] text-text">
                         {tIngredient(ingredient)}
                       </p>
                       <button
                         type="button"
                         aria-label={t('pantry.delete', { name: tIngredient(ingredient) })}
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-muted transition-transform active:scale-[0.97]"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]
+                          text-muted transition-transform active:scale-[0.97]"
                         onClick={() => deleteIngredient(ingredient.id)}
                       >
                         <Trash2 size={18} />
@@ -123,7 +124,8 @@ export function PantryList({ data, setData }: PantryListProps) {
                         onClick={() => toggleIngredient(ingredient.id)}
                       >
                         <span
-                          className={`absolute left-0 top-1 h-5 w-5 rounded-full bg-surface shadow-[0_2px_6px_rgba(15,23,42,0.12)] transition-transform ${
+                          className={`absolute left-0 top-1 h-5 w-5 rounded-full bg-surface
+                            shadow-[0_2px_6px_rgba(15,23,42,0.12)] transition-transform ${
                             ingredient.inStock
                               ? 'translate-x-6'
                               : 'translate-x-1'
@@ -141,7 +143,8 @@ export function PantryList({ data, setData }: PantryListProps) {
 
       <button
         type="button"
-        className="flex h-12 w-full items-center justify-center truncate rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+        className="flex min-h-12 w-full items-center justify-center rounded-[14px] bg-food px-3 py-2
+          text-sm font-semibold text-white transition-transform active:scale-[0.97]"
         onClick={() => setIsAdding(true)}
       >
         {t('pantry.addButton')}
@@ -159,7 +162,8 @@ export function PantryList({ data, setData }: PantryListProps) {
               type="text"
               value={name}
               placeholder={t('pantry.namePlaceholder')}
-              className="h-12 w-full rounded-[14px] border border-line bg-bg px-4 text-[15px] text-text outline-none placeholder:text-muted"
+              className="h-12 w-full rounded-[14px] border border-line bg-bg px-4 text-[15px]
+                text-text outline-none placeholder:text-muted"
               onChange={(event) => setName(event.target.value)}
             />
           </label>
@@ -174,7 +178,8 @@ export function PantryList({ data, setData }: PantryListProps) {
                   <button
                     key={group.category}
                     type="button"
-                    className={`h-11 min-w-0 truncate rounded-[14px] border px-2 text-sm font-medium transition-transform active:scale-[0.97] ${
+                    className={`min-h-11 min-w-0 break-words rounded-[14px] border px-2 py-2 text-sm
+                      font-medium transition-transform active:scale-[0.97] ${
                       selected
                         ? 'border-food bg-food text-white'
                         : 'border-line bg-surface-2 text-muted'
@@ -190,7 +195,9 @@ export function PantryList({ data, setData }: PantryListProps) {
 
           <button
             type="button"
-            className="h-12 w-full rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-muted"
+            className="h-12 w-full rounded-[14px] bg-food text-sm font-semibold text-white
+              transition-transform active:scale-[0.97] disabled:cursor-not-allowed
+              disabled:bg-surface-2 disabled:text-muted"
             disabled={!name.trim()}
             onClick={addIngredient}
           >

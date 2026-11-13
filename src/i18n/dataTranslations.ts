@@ -1,5 +1,4 @@
 import type { Recipe } from '../food/recipes';
-import { strings } from './strings';
 
 type NameTranslation = { en: string };
 type CardioTranslation = { name: string; steps: string[] };
@@ -66,7 +65,7 @@ export const ingredientTranslations: Record<string, NameTranslation> = {
   'ing-toast': { en: 'Whole Wheat Bread' },
   'ing-oats': { en: 'Rolled Oats' },
   'ing-cheese': { en: 'Sliced Cheddar' },
-  'ing-greek-yogurt': { en: 'Unsweetened Greek Yogurt' },
+  'ing-greek-yogurt': { en: 'Plain Greek Yogurt' },
   'ing-banana': { en: 'Banana' },
   'ing-egg': { en: 'Eggs' },
   'ing-chicken': { en: 'Chicken Breast' },
@@ -136,7 +135,7 @@ export const cardioTranslations: Record<
   },
   'cardio-stair-steady': {
     en: {
-      name: 'Steady StairMaster Climb',
+      name: 'Steady Stair Climb',
       steps: [
         'Warm up for 4 minutes: level 3–4',
         'Climb steadily for 12 minutes: level 6–7',
@@ -146,7 +145,7 @@ export const cardioTranslations: Record<
   },
   'cardio-stair-interval': {
     en: {
-      name: 'StairMaster Intervals',
+      name: 'Stair Intervals',
       steps: [
         'Warm up for 4 minutes: level 3–4',
         'Repeat 6 rounds: climb fast for 1 minute at level 9–10',
@@ -157,7 +156,7 @@ export const cardioTranslations: Record<
   },
   'cardio-stair-endurance': {
     en: {
-      name: 'StairMaster Endurance',
+      name: 'Stair Endurance',
       steps: [
         'Warm up for 5 minutes: level 3–4',
         'Endurance climb for 20 minutes: level 6–8',
@@ -308,7 +307,7 @@ export const cardioTranslations: Record<
   },
   'cardio-airbike-steady': {
     en: {
-      name: 'Low-Intensity Steady Ride',
+      name: 'Easy Steady Ride',
       steps: [
         'Use light to moderate resistance throughout, working your arms and legs together, heart rate 60–70%',
       ],
@@ -336,7 +335,7 @@ export const cardioTranslations: Record<
   },
   'cardio-skierg-combo': {
     en: {
-      name: 'Upper & Lower Body Circuit',
+      name: 'Full-Body Circuit',
       steps: [
         'Warm up for 5 minutes',
         '4 rounds: 3 minutes on the SkiErg + 1 minute of rest + 1 minute of marching in place',
@@ -349,12 +348,12 @@ export const cardioTranslations: Record<
 export const exerciseTranslations: Record<string, NameTranslation> = {
   '槓鈴臥推': { en: 'Barbell Bench Press' },
   '啞鈴肩推': { en: 'Dumbbell Shoulder Press' },
-  '上斜啞鈴臥推': { en: 'Incline Dumbbell Bench Press' },
+  '上斜啞鈴臥推': { en: 'Incline Dumbbell Press' },
   '側平舉': { en: 'Lateral Raise' },
   '滑輪三頭下壓': { en: 'Cable Triceps Pushdown' },
   '高位下拉': { en: 'Lat Pulldown' },
   '坐姿划船': { en: 'Seated Row' },
-  '單手啞鈴划船': { en: 'Single-Arm Dumbbell Row' },
+  '單手啞鈴划船': { en: 'One-Arm Dumbbell Row' },
   '臉拉': { en: 'Face Pull' },
   '啞鈴彎舉': { en: 'Dumbbell Curl' },
   '深蹲': { en: 'Squat' },
@@ -2595,22 +2594,3 @@ export const recipeTranslations: Record<string, Recipe> = {
     kcal: 525, proteinG: 39,
   },
 };
-
-Object.assign(strings, {
-  'recipe.servings': { 'zh-Hant': '{count} 人份', en: 'Serves {count}' },
-  'recipe.energy': { 'zh-Hant': '約 {count} kcal（估算）', en: '~{count} kcal (estimate)' },
-  'recipe.protein': { 'zh-Hant': '蛋白質 {count} g（估算）', en: '{count} g protein (estimate)' },
-  'recipe.ingredients': { 'zh-Hant': '食材', en: 'Ingredients' },
-  'recipe.seasonings': { 'zh-Hant': '調味料', en: 'Seasonings' },
-  'recipe.steps': { 'zh-Hant': '步驟', en: 'Method' },
-  'recipe.tip': { 'zh-Hant': '小提醒', en: 'Cooking Tip' },
-  'recipe.missing': { 'zh-Hant': '這道菜還沒有食譜', en: 'There is no recipe for this dish yet.' },
-  'recipe.tutorials': { 'zh-Hant': '看教學', en: 'Cooking Tutorials' },
-  'recipe.youtube': { 'zh-Hant': 'YouTube', en: 'YouTube' },
-  'recipe.bilibili': { 'zh-Hant': 'Bilibili', en: 'Bilibili' },
-  'recipe.icook': { 'zh-Hant': '愛料理', en: 'iCook' },
-  'recipe.google': { 'zh-Hant': 'Google 食譜', en: 'Google Recipes' },
-  'recipe.searchMethod': { 'zh-Hant': '{name} 做法', en: '{name} recipe' },
-  'recipe.searchRecipe': { 'zh-Hant': '{name} 食譜', en: '{name} recipe' },
-  'recipe.chineseMethod': { 'zh-Hant': '{name} 做法', en: '{name} 做法' },
-});

@@ -58,7 +58,8 @@ export function SegmentedTabs({
           <button
             key={option.value}
             type="button"
-            className={`relative z-10 flex min-w-0 flex-1 items-center justify-center rounded-[10px] px-1 py-1 text-sm font-medium leading-4 transition-transform active:scale-[0.97] ${
+            className={`relative z-10 flex min-w-0 flex-1 items-center justify-center rounded-[10px]
+              px-1 py-1 text-sm font-medium leading-4 transition-transform active:scale-[0.97] ${
               isSelected ? classes.activeText : 'text-muted'
             }`}
             onClick={() => onChange(option.value)}

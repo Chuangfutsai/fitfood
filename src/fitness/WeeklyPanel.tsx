@@ -95,7 +95,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
         <div className="space-y-4">
           <h2 className="text-[24px] font-extrabold leading-8 text-text">
             {t('weekly.completedLabel')}{' '}
-            <span className="whitespace-nowrap text-fit tabular-nums">
+            <span className="text-fit tabular-nums">
               {t('weekly.completedDays', { count: completedDays, total: trainingDays.length })}
             </span>
           </h2>
@@ -147,7 +147,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
             >
               {isToday && (
                 <div className="mb-2 flex justify-end">
-                  <span className="max-w-full truncate rounded-full bg-fit/10 px-2 py-1 text-xs font-bold text-fit">
+                  <span className="max-w-full rounded-full bg-fit/10 px-2 py-1 text-xs font-bold text-fit">
                     {t('weekly.today')}
                   </span>
                 </div>
@@ -159,15 +159,18 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                   aria-label={t('weekly.detailsLabel', { date: formatDate(day.date) })}
                   aria-expanded={expanded}
                   aria-controls={detailsId}
-                  className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-[14px] text-left transition-transform active:scale-[0.97]"
+                  className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-[14px]
+                    text-left transition-transform active:scale-[0.97]"
                   onClick={() =>
                     setExpandedDate((current) =>
                       current === day.key ? null : day.key,
                     )
                   }
                 >
-                  <span className="flex w-10 shrink-0 flex-col items-center gap-1">
-                    <span className={`${lang === 'en' ? 'text-[16px]' : 'text-[24px]'} max-w-full truncate font-bold text-text`}>{weekday}</span>
+                  <span className="flex min-w-10 shrink-0 flex-col items-center gap-1">
+                    <span className={`${lang === 'en' ? 'text-[16px]' : 'text-[24px]'} font-bold text-text`}>
+                      {weekday}
+                    </span>
                     <span className="text-xs text-muted tabular-nums">
                       {formatDate(day.date, { month: 'numeric', day: 'numeric' })}
                     </span>
@@ -179,19 +182,25 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                   </span>
                   <span className="flex min-w-0 flex-1 flex-wrap gap-2">
                     {day.cardioPlanId !== null && (
-                      <span className="max-w-full truncate rounded-[12px] bg-fit/10 px-3 py-2 text-xs font-medium leading-5 text-fit">
+                      <span className={
+                        'min-w-0 max-w-full break-words rounded-[12px] bg-fit/10 ' +
+                        'px-3 py-2 text-xs font-medium leading-5 text-fit'
+                      }>
                         {translatedCardio
                           ? `${translatedCardio.name} · ${t('unit.minuteShort', { count: translatedCardio.minutes })}`
                           : t('weekly.cardioMissing')}
                       </span>
                     )}
                     {day.strengthFocus !== null && (
-                      <span className="max-w-full truncate rounded-[12px] bg-surface-2 px-3 py-2 text-xs font-medium text-text">
+                      <span className={
+                        'min-w-0 max-w-full break-words rounded-[12px] bg-surface-2 ' +
+                        'px-3 py-2 text-xs font-medium text-text'
+                      }>
                         {t(strengthLabels[day.strengthFocus])}
                       </span>
                     )}
                     {day.isRestDay && (
-                      <span className="truncate text-[15px] text-muted">{t('weekly.restDay')}</span>
+                      <span className="text-[15px] text-muted">{t('weekly.restDay')}</span>
                     )}
                   </span>
                 </button>
@@ -201,7 +210,8 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                     type="button"
                     aria-label={t('weekly.completeLabel', { date: formatDate(day.date) })}
                     aria-pressed={completed}
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-[0.97] ${
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full
+                      transition-transform active:scale-[0.97] ${
                       completed
                         ? 'bg-fit text-white'
                         : 'border-2 border-line text-muted'
@@ -258,7 +268,7 @@ export function WeeklyPanel({ data, setData }: WeeklyPanelProps) {
                               <p className="min-w-0 flex-1 break-words text-[15px] font-medium text-text">
                                 {tExercise(exercise.name)}
                               </p>
-                              <div className="w-24 shrink-0 text-right">
+                              <div className="shrink-0 text-right">
                                 <p className="text-[15px] font-bold text-text tabular-nums">
                                   {exercise.sets} × {tExercise(exercise.reps)}
                                 </p>

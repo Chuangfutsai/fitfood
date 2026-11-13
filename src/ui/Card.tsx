@@ -18,7 +18,9 @@ export function Card({ children, className, accent }: CardProps) {
     >
       {accent && (
         <div
-          className={`pointer-events-none absolute -left-8 -top-8 h-24 w-24 rounded-full blur-2xl ${accentGlowClass[accent]}`}
+          className={`pointer-events-none absolute -left-8 -top-8 h-24 w-24 rounded-full blur-2xl ${
+            accentGlowClass[accent]
+          }`}
         />
       )}
       <div className="relative">{children}</div>

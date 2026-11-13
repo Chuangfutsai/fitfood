@@ -138,7 +138,9 @@ export function DishList({ data, setData }: DishListProps) {
           type="search"
           value={query}
           placeholder={t('dishes.search')}
-          className="h-12 w-full rounded-[14px] border border-line bg-surface py-3 pl-11 pr-4 text-[15px] text-text shadow-[0_8px_24px_rgba(15,23,42,0.06)] outline-none placeholder:text-muted"
+          className="h-12 w-full rounded-[14px] border border-line bg-surface py-3 pl-11 pr-4
+            text-[15px] text-text shadow-[0_8px_24px_rgba(15,23,42,0.06)]
+            outline-none placeholder:text-muted"
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
@@ -160,7 +162,10 @@ export function DishList({ data, setData }: DishListProps) {
                 onClick={() => setSelectedDish(dish)}
               >
                 {missingIngredient && (
-                  <span className="absolute right-3 top-3 z-10 max-w-[calc(100%-24px)] truncate rounded-full bg-surface-2 px-2 py-1 text-xs text-muted">
+                  <span
+                    className="absolute right-3 top-3 z-10 max-w-[calc(100%-24px)] break-words rounded-full
+                      bg-surface-2 px-2 py-1 text-xs text-muted"
+                  >
                     {t('dishes.missing')}
                   </span>
                 )}
@@ -170,7 +175,7 @@ export function DishList({ data, setData }: DishListProps) {
                     className="aspect-square w-full rounded-[14px]"
                   />
                   <div className="space-y-2 pt-3">
-                    <h2 className="line-clamp-2 text-[15px] font-bold text-text">
+                    <h2 className="break-words text-[15px] font-bold text-text">
                       {tDish(dish)}
                     </h2>
                     <p className="flex items-center gap-1 text-xs text-muted">
@@ -187,7 +192,8 @@ export function DishList({ data, setData }: DishListProps) {
 
       <button
         type="button"
-        className="flex h-12 w-full items-center justify-center rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+        className="flex h-12 w-full items-center justify-center rounded-[14px] bg-food
+          text-sm font-semibold text-white transition-transform active:scale-[0.97]"
         onClick={() => setIsAdding(true)}
       >
         {t('dishes.addButton')}
@@ -204,10 +210,25 @@ export function DishList({ data, setData }: DishListProps) {
             ? recipeTranslations[selectedDish.id] ?? sourceRecipe
             : sourceRecipe;
           const tutorials = [
-            { key: 'youtube', Icon: CirclePlay, href: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(t('recipe.searchMethod', { name: tDish(selectedDish) })) },
-            { key: 'bilibili', Icon: TvMinimal, href: 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(t('recipe.chineseMethod', { name: selectedDish.name })) },
-            { key: 'icook', Icon: BookOpen, href: 'https://icook.tw/search/' + encodeURIComponent(selectedDish.name) + '/' },
-            { key: 'google', Icon: Search, href: 'https://www.google.com/search?q=' + encodeURIComponent(t('recipe.searchRecipe', { name: tDish(selectedDish) })) },
+            {
+              key: 'youtube', Icon: CirclePlay,
+              href: 'https://www.youtube.com/results?search_query=' +
+                encodeURIComponent(t('recipe.searchMethod', { name: tDish(selectedDish) }))
+            },
+            {
+              key: 'bilibili', Icon: TvMinimal,
+              href: 'https://search.bilibili.com/all?keyword=' +
+                encodeURIComponent(t('recipe.chineseMethod', { name: selectedDish.name }))
+            },
+            {
+              key: 'icook', Icon: BookOpen,
+              href: 'https://icook.tw/search/' + encodeURIComponent(selectedDish.name) + '/'
+            },
+            {
+              key: 'google', Icon: Search,
+              href: 'https://www.google.com/search?q=' +
+                encodeURIComponent(t('recipe.searchRecipe', { name: tDish(selectedDish) }))
+            },
           ];
 
           return (
@@ -249,7 +270,11 @@ export function DishList({ data, setData }: DishListProps) {
 
                       return (
                         <li key={originalName} className="grid grid-cols-2 gap-3 py-2 text-sm leading-6">
-                          <span className={missing ? 'min-w-0 break-words text-muted line-through' : 'min-w-0 break-words text-text'}>
+                          <span
+                            className={missing
+                              ? 'min-w-0 break-words text-muted line-through'
+                              : 'min-w-0 break-words text-text'}
+                          >
                             {item.name}
                           </span>
                           <span className="min-w-0 break-words text-right text-muted">{item.amount}</span>
@@ -276,7 +301,10 @@ export function DishList({ data, setData }: DishListProps) {
                   <ol className="space-y-4">
                     {recipe.steps.map((step, index) => (
                       <li key={index} className="flex items-start gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-food text-sm font-bold text-white tabular-nums">
+                        <span
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full
+                            bg-food text-sm font-bold text-white tabular-nums"
+                        >
                           {index + 1}
                         </span>
                         <p className="min-w-0 flex-1 break-words text-[15px] leading-7 text-text">{step}</p>
@@ -303,7 +331,8 @@ export function DishList({ data, setData }: DishListProps) {
                     return (
                       <span
                         key={ingredientId}
-                        className={'max-w-full truncate rounded-full px-3 py-2 text-sm ' + (inStock ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted line-through')}
+                        className={'max-w-full break-words rounded-full px-3 py-2 text-sm ' +
+                          (inStock ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted line-through')}
                       >
                         {ingredient ? tIngredient(ingredient) : t('dishes.deletedIngredient')}
                       </span>
@@ -323,10 +352,12 @@ export function DishList({ data, setData }: DishListProps) {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex min-h-11 min-w-0 items-center gap-2 rounded-[14px] border border-line bg-surface px-3 py-2 text-sm font-medium text-text transition-transform active:scale-[0.97]"
+                    className="flex min-h-11 min-w-0 items-center gap-2 rounded-[14px] border border-line
+                      bg-surface px-3 py-2 text-sm font-medium text-text transition-transform
+                      active:scale-[0.97]"
                   >
                     <Icon size={18} className="shrink-0 text-food" aria-hidden="true" />
-                    <span className="min-w-0 truncate">{t('recipe.' + key)}</span>
+                    <span className="min-w-0 break-words">{t('recipe.' + key)}</span>
                   </a>
                 ))}
               </div>
@@ -355,7 +386,8 @@ export function DishList({ data, setData }: DishListProps) {
               type="text"
               value={name}
               placeholder={t('dishes.namePlaceholder')}
-              className="h-12 w-full rounded-[14px] border border-line bg-bg px-4 text-[15px] text-text outline-none placeholder:text-muted"
+              className="h-12 w-full rounded-[14px] border border-line bg-bg px-4 text-[15px]
+                text-text outline-none placeholder:text-muted"
               onChange={(event) => setName(event.target.value)}
             />
           </label>
@@ -397,7 +429,8 @@ export function DishList({ data, setData }: DishListProps) {
                         <button
                           key={ingredient.id}
                           type="button"
-                          className={`min-h-11 max-w-full truncate rounded-full border px-3 py-2 text-sm transition-transform active:scale-[0.97] ${
+                          className={`min-h-11 max-w-full break-words rounded-full border px-3 py-2 text-sm
+                            transition-transform active:scale-[0.97] ${
                             selected
                               ? 'border-food bg-food text-white'
                               : 'border-line bg-surface-2 text-muted'
@@ -416,7 +449,9 @@ export function DishList({ data, setData }: DishListProps) {
 
           <button
             type="button"
-            className="h-12 w-full rounded-[14px] bg-food text-sm font-semibold text-white transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-muted"
+            className="h-12 w-full rounded-[14px] bg-food text-sm font-semibold text-white
+              transition-transform active:scale-[0.97] disabled:cursor-not-allowed
+              disabled:bg-surface-2 disabled:text-muted"
             disabled={!name.trim() || selectedIngredientIds.length === 0}
             onClick={addDish}
           >

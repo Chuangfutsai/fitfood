@@ -1,5 +1,14 @@
 import type { AppData, Dish, Meal, Profile } from './types';
 
+export function shuffle<T>(items: readonly T[], random = Math.random): T[] {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const otherIndex = Math.floor(random() * (index + 1));
+    [result[index], result[otherIndex]] = [result[otherIndex], result[index]];
+  }
+  return result;
+}
+
 export function getLocalDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

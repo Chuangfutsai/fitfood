@@ -29,9 +29,16 @@ export function shoppingList(
       if (!ingredient || ingredient.inStock) return;
       const sourceIndex = recipe?.ingredients.findIndex((item) => item.name === ingredient.name) ?? -1;
       const recipeItem = sourceIndex >= 0
-        ? (lang === 'en' ? translatedRecipes[planned.dishId]?.ingredients[sourceIndex] : recipe?.ingredients[sourceIndex])
+        ? (lang === 'en'
+          ? translatedRecipes[planned.dishId]?.ingredients[sourceIndex]
+          : recipe?.ingredients[sourceIndex])
         : undefined;
-      const current = result.get(ingredient.id) ?? { id: ingredient.id, name: ingredient.name, category: ingredient.category, needs: [] };
+      const current = result.get(ingredient.id) ?? {
+        id: ingredient.id,
+        name: ingredient.name,
+        category: ingredient.category,
+        needs: []
+      };
       current.needs.push({ dishId: dish.id, amount: recipeItem?.amount ?? missingAmount });
       result.set(ingredient.id, current);
     });

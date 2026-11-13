@@ -11,8 +11,16 @@ function isDateKey(value: unknown): value is string {
 function readMeal(value: unknown): PlannedMeal | null {
   if (!value || typeof value !== 'object') return null;
   const item = value as Record<string, unknown>;
-  if ((item.meal !== 'breakfast' && item.meal !== 'lunch' && item.meal !== 'dinner') || typeof item.dishId !== 'string') return null;
-  return { meal: item.meal, dishId: item.dishId, locked: item.locked === true, ...(item.overTarget === true ? { overTarget: true } : {}) };
+  if (
+    (item.meal !== 'breakfast' && item.meal !== 'lunch' && item.meal !== 'dinner')
+    || typeof item.dishId !== 'string'
+  ) return null;
+  return {
+    meal: item.meal,
+    dishId: item.dishId,
+    locked: item.locked === true,
+    ...(item.overTarget === true ? { overTarget: true } : {})
+  };
 }
 
 function readDay(value: unknown): PlannedDay | null {
@@ -64,7 +72,9 @@ export function sanitizeMenuState(raw: unknown): MenuState {
     weekStart: isDateKey(item.weekStart) ? item.weekStart : '',
     days: Array.isArray(item.days) ? item.days.map(readDay).filter((day): day is PlannedDay => day !== null) : [],
     checked: Array.isArray(item.checked) ? item.checked.filter((id): id is string => typeof id === 'string') : [],
-    extras: Array.isArray(item.extras) ? item.extras.map(readExtra).filter((extra): extra is MenuExtra => extra !== null) : [],
+    extras: Array.isArray(item.extras)
+      ? item.extras.map(readExtra).filter((extra): extra is MenuExtra => extra !== null)
+      : [],
   };
 }
 

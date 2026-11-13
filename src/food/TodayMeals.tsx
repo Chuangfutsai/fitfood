@@ -140,29 +140,38 @@ export function TodayMeals({ data, setData, onNotice, onOpenGoals }: TodayMealsP
         aria-expanded={isExpanded}
         aria-controls={listId}
         disabled={!hasEntries}
-        className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs leading-4 transition-transform enabled:active:scale-[0.97]"
+        className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-xs leading-4
+          transition-transform enabled:active:scale-[0.97]"
         onClick={() => setExpanded((previous) => !previous)}
       >
         <span className="shrink-0 font-bold text-text">{t('food.meals.title')}</span>
-        <span className="min-w-0 flex-1 truncate text-right text-muted tabular-nums">
+        <span className="min-w-0 flex-1 break-words text-right text-muted tabular-nums">
           {hasEntries
             ? targets
               ? calorieStatus === 'tomato'
-                ? `${t(entries.length === 1 ? 'food.meals.countOne' : 'food.meals.count', { count: entries.length })} · ${t('goals.over', { count: nutrition.kcal - targets.kcal })}`
+                ? `${t(entries.length === 1
+                  ? 'food.meals.countOne'
+                  : 'food.meals.count', { count: entries.length })} · ${t('goals.over', {
+                  count: nutrition.kcal - targets.kcal
+                })}`
                 : t(entries.length === 1 ? 'food.meals.countOne' : 'food.meals.count', { count: entries.length })
-              : t(entries.length === 1 ? 'food.meals.summaryOne' : 'food.meals.summary', { n: entries.length, kcal: nutrition.kcal, g: nutrition.proteinG })
+              : t(entries.length === 1 ? 'food.meals.summaryOne' : 'food.meals.summary', {
+                n: entries.length, kcal: nutrition.kcal, g: nutrition.proteinG
+              })
             : t('food.meals.notRecorded')}
         </span>
         <ChevronDown
           size={14}
           aria-hidden="true"
-          className={`shrink-0 text-muted transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''} ${hasEntries ? '' : 'opacity-40'}`}
+          className={`shrink-0 text-muted transition-transform duration-150 ${
+            isExpanded ? 'rotate-180' : ''
+          } ${hasEntries ? '' : 'opacity-40'}`}
         />
       </button>
       {targets ? (
-        <div className="space-y-1 px-3 pb-2 text-[10px] leading-3 tabular-nums">
-          <div className="flex items-center gap-2">
-            <span className={`w-[48%] shrink-0 truncate ${calorieText}`}>
+        <div className="space-y-2 px-3 pb-2 text-xs leading-4 tabular-nums">
+          <div className="space-y-1">
+            <span className={`block break-words ${calorieText}`}>
               {t('goals.caloriesProgress', { eaten: nutrition.kcal, target: targets.kcal })}
             </span>
             <div
@@ -172,15 +181,24 @@ export function TodayMeals({ data, setData, onNotice, onOpenGoals }: TodayMealsP
               aria-valuemax={targets.kcal}
               aria-valuenow={Math.min(nutrition.kcal, targets.kcal)}
               aria-valuetext={t('goals.caloriesProgress', { eaten: nutrition.kcal, target: targets.kcal })}
-              className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
             >
-              <div className={`h-full rounded-full transition-[width] ${calorieColor}`} style={{ width: `${Math.min(100, nutrition.kcal / targets.kcal * 100)}%` }} />
+              <div
+                className={`h-full rounded-full transition-[width] ${calorieColor}`}
+                style={{ width: `${Math.min(100, nutrition.kcal / targets.kcal * 100)}%` }}
+              />
             </div>
           </div>
-          <div className="flex items-center gap-2 text-muted">
-            <span className="flex w-[48%] shrink-0 items-center gap-1">
-              <span className="truncate">{t('goals.proteinProgress', { eaten: nutrition.proteinG, target: targets.proteinG })}</span>
-              {nutrition.proteinG >= targets.proteinG && <Check size={12} className="shrink-0 text-ok" aria-label={t('goals.proteinMet')} />}
+          <div className="space-y-1 text-muted">
+            <span className="flex items-center gap-1">
+              <span className="min-w-0 break-words">
+                {t('goals.proteinProgress', { eaten: nutrition.proteinG, target: targets.proteinG })}
+              </span>
+              {nutrition.proteinG >= targets.proteinG && <Check
+                size={12}
+                className="shrink-0 text-ok"
+                aria-label={t('goals.proteinMet')}
+              />}
             </span>
             <div
               role="progressbar"
@@ -188,14 +206,21 @@ export function TodayMeals({ data, setData, onNotice, onOpenGoals }: TodayMealsP
               aria-valuemin={0}
               aria-valuemax={targets.proteinG}
               aria-valuenow={Math.min(nutrition.proteinG, targets.proteinG)}
-              className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"
+              className="h-1 w-full overflow-hidden rounded-full bg-surface-2"
             >
-              <div className="h-full rounded-full bg-food transition-[width]" style={{ width: `${Math.min(100, nutrition.proteinG / targets.proteinG * 100)}%` }} />
+              <div
+                className="h-full rounded-full bg-food transition-[width]"
+                style={{ width: `${Math.min(100, nutrition.proteinG / targets.proteinG * 100)}%` }}
+              />
             </div>
           </div>
         </div>
       ) : (
-        <button type="button" onClick={onOpenGoals} className="block h-10 w-full truncate px-3 pb-2 text-left text-xs font-medium text-food">
+        <button
+          type="button"
+          onClick={onOpenGoals}
+          className="block min-h-11 w-full px-3 py-2 text-left text-xs font-medium text-food"
+        >
           {t('goals.invitation')}
         </button>
       )}
@@ -224,7 +249,7 @@ export function TodayMeals({ data, setData, onNotice, onOpenGoals }: TodayMealsP
               <li key={entry.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <MealImage dishId={entry.dishId} name={name} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-text">{name}</p>
+                  <p className="break-words text-sm font-semibold text-text">{name}</p>
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted tabular-nums">
                     <span className="rounded-full bg-food/10 px-2 text-food">{t(`meal.${entry.meal}`)}</span>
                     <time dateTime={validTime ? recordedAt.toISOString() : undefined}>
@@ -238,7 +263,8 @@ export function TodayMeals({ data, setData, onNotice, onOpenGoals }: TodayMealsP
                 <button
                   type="button"
                   aria-label={t('food.meals.remove', { name })}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-muted transition-transform active:scale-[0.97]"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]
+                    text-muted transition-transform active:scale-[0.97]"
                   onClick={() => removeMeal(entry, index)}
                 >
                   <Trash2 size={18} aria-hidden="true" />

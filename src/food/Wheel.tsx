@@ -411,7 +411,9 @@ export function Wheel({ items, onResult, onSpinningChange }: WheelProps) {
       <motion.button
         type="button"
         aria-label={t('wheel.start')}
-        className="absolute left-1/2 top-[52.63%] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-broccoli bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+        className="absolute left-1/2 top-[52.63%] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2
+          items-center justify-center rounded-full border-4 border-broccoli bg-surface
+          disabled:cursor-not-allowed disabled:opacity-50"
         animate={
           isSpinning || isFlashing
             ? { scale: 1 }
@@ -425,7 +427,10 @@ export function Wheel({ items, onResult, onSpinningChange }: WheelProps) {
         disabled={isSpinning || isFlashing}
         onClick={handleSpin}
       >
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-food text-[22px] font-bold text-white">
+        <span
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-food text-[22px]
+            font-bold text-white"
+        >
           {t('wheel.spin')}
         </span>
       </motion.button>

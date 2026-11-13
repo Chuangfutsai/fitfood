@@ -42,7 +42,8 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
         <LanguageButton accent="fit" SheetComponent={Sheet} />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <motion.div
-            className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-carrot"
+            className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center
+              justify-center rounded-full bg-carrot"
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
           >
@@ -56,7 +57,8 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
             <Footprints className="text-white" size={32} strokeWidth={2} />
           </motion.div>
           <motion.div
-            className="absolute right-9 top-[72px] flex h-[72px] w-[72px] items-center justify-center rounded-full bg-radish"
+            className="absolute right-9 top-[72px] flex h-[72px] w-[72px] items-center
+              justify-center rounded-full bg-radish"
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
           >
@@ -76,7 +78,8 @@ function HeroCard({ nextFocusLabel }: { nextFocusLabel: string }) {
             <span className="block">{t('fitness.hero.titleLine1')}</span>
             <span className="block">{t('fitness.hero.titleLine2')}</span>
           </h1>
-          <span className="mt-2 inline-block max-w-full break-words rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-fit">
+          <span className="mt-2 inline-block max-w-full break-words rounded-full
+            bg-surface px-3 py-1 text-xs font-bold leading-4 text-fit">
             {t('fitness.hero.nextStrength', { focus: nextFocusLabel })}
           </span>
         </div>

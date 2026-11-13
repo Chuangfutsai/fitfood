@@ -43,7 +43,10 @@ export function exportBackup(data: AppData, now: Date = new Date()): BackupEnvel
 }
 
 export function getBackupFilename(now: Date = new Date()): string {
-  const date = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+  const date = [
+    now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0')
+  ].join('-');
   return `fitfood-backup-${date}.json`;
 }
 
@@ -60,7 +63,8 @@ export function parseBackup(text: string): BackupResult {
   }
   const envelope = parsed as Record<string, unknown>;
   if (envelope.app !== 'fitfood') return { ok: false, error: 'wrong-app' };
-  if (typeof envelope.schemaVersion !== 'number' || !Number.isInteger(envelope.schemaVersion) || envelope.schemaVersion < 1) {
+  if (typeof envelope.schemaVersion !== 'number' ||
+    !Number.isInteger(envelope.schemaVersion) || envelope.schemaVersion < 1) {
     return { ok: false, error: 'invalid-data' };
   }
   if (envelope.schemaVersion > CURRENT_SCHEMA_VERSION) return { ok: false, error: 'future-version' };
@@ -88,7 +92,10 @@ export function parseBackup(text: string): BackupResult {
       : undefined;
     return {
       ok: true,
-      backup: { app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION, exportedAt: envelope.exportedAt, data, ...(modules ? { modules } : {}) },
+      backup: {
+        app: 'fitfood', schemaVersion: CURRENT_SCHEMA_VERSION,
+        exportedAt: envelope.exportedAt, data, ...(modules ? { modules } : {})
+      },
     };
   } catch (error) {
     return { ok: false, error: error instanceof UnsupportedDataVersionError ? 'future-version' : 'invalid-data' };

@@ -103,11 +103,11 @@ function OtherPlan({ plan, open, onToggle }: OtherPlanProps) {
         className="flex min-h-11 w-full items-center justify-between gap-3 text-left"
         onClick={onToggle}
       >
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-text">
+        <div className="min-w-0 flex-1">
+          <p className="break-words text-sm font-semibold text-text">
             {t('strength.focusPlan', { focus: t(focusLabels[plan.focus]) })}
           </p>
-          <p className="mt-1 truncate text-xs text-muted">{tExercise(plan.name)}</p>
+          <p className="mt-1 break-words text-xs text-muted">{tExercise(plan.name)}</p>
         </div>
         <ChevronDown
           className={`shrink-0 text-muted transition-transform ${
@@ -240,13 +240,13 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
               {t(focusLabels[todayFocus])}
             </h2>
             <div className="flex flex-wrap gap-2">
-              <span className="max-w-full truncate rounded-full bg-fit/10 px-3 py-2 text-sm text-fit">
+              <span className="max-w-full break-words rounded-full bg-fit/10 px-3 py-2 text-sm text-fit">
                 {t('strength.exerciseCount', { count: todayPlan.exercises.length })}
               </span>
-              <span className="tabular max-w-full truncate rounded-full bg-fit/10 px-3 py-2 text-sm text-fit">
+              <span className="tabular max-w-full break-words rounded-full bg-fit/10 px-3 py-2 text-sm text-fit">
                 {t('strength.estimatedMinutes', { count: estimatedMinutes })}
               </span>
-              <span className="tabular max-w-full truncate rounded-full bg-fit/10 px-3 py-2 text-sm text-fit">
+              <span className="tabular max-w-full break-words rounded-full bg-fit/10 px-3 py-2 text-sm text-fit">
                 {t('unit.sets', { count: totalSets ?? 0 })}
               </span>
             </div>
@@ -258,7 +258,7 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
 
           <button
             type="button"
-            className={`flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-sm font-semibold
+            className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] py-2 text-sm font-semibold
               transition-transform active:scale-[0.97] ${
               isCompleted
                 ? 'bg-surface-2 text-muted'
@@ -268,7 +268,7 @@ export function StrengthPanel({ data, setData }: StrengthPanelProps) {
             onClick={completeWorkout}
           >
             <Check size={18} />
-            <span className="truncate">{t(isCompleted ? 'strength.completed' : 'strength.complete')}</span>
+            <span>{t(isCompleted ? 'strength.completed' : 'strength.complete')}</span>
           </button>
         </>
       ) : (

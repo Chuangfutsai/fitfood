@@ -6,7 +6,7 @@ import { useLang } from '../i18n/LanguageContext';
 import { getDailyTargets, getLocalDateKey, getStreak, getTodayNutrition } from '../stats';
 import { useTodayText } from './useTodayText';
 import { useMenuStore } from '../food/menu/menuStore';
-import { loadWorkoutState } from '../fitness/workout/workoutStore';
+import { useWorkoutState } from '../fitness/workout/workoutStore';
 import { completedSetCount, sessionVolume } from '../fitness/workout/workoutUtils';
 
 interface TodayPageProps {
@@ -40,7 +40,13 @@ function useTodayDate() {
   return today;
 }
 
-function CalorieRing({ eaten, target, label, remainingLabel, overLabel }: { eaten: number; target: number; label: string; remainingLabel: string; overLabel: string }) {
+function CalorieRing({ eaten, target, label, remainingLabel, overLabel }: {
+  eaten: number;
+  target: number;
+  label: string;
+  remainingLabel: string;
+  overLabel: string;
+}) {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const ratio = Math.min(eaten / target, 1);
@@ -50,8 +56,16 @@ function CalorieRing({ eaten, target, label, remainingLabel, overLabel }: { eate
   return (
     <div className="relative flex aspect-square w-2/5 shrink-0 items-center justify-center">
       <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90" role="img" aria-label={label}>
-        <circle cx="64" cy="64" r={radius} fill="none" stroke="currentColor" strokeWidth="10" className="text-surface-2" />
-        <circle cx="64" cy="64" r={radius} fill="none" stroke="currentColor" strokeWidth="10" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={circumference * (1 - ratio)} className={`transition-[stroke-dashoffset] duration-500 ${isOver ? 'text-tomato-ink' : 'text-food'}`} />
+        <circle
+          cx="64" cy="64" r={radius} fill="none" stroke="currentColor"
+          strokeWidth="10" className="text-surface-2"
+        />
+        <circle
+          cx="64" cy="64" r={radius} fill="none" stroke="currentColor" strokeWidth="10"
+          strokeLinecap="round" strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - ratio)}
+          className={`transition-[stroke-dashoffset] duration-500 ${isOver ? 'text-tomato-ink' : 'text-food'}`}
+        />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center tabular-nums">
         <span className="text-[26px] font-extrabold leading-7 text-text">{remaining}</span>
@@ -68,7 +82,13 @@ function MealImage({ dishId, name, planned = false }: { dishId: string | undefin
   const [failed, setFailed] = useState(false);
   if (!dishId) return <Plus size={24} aria-hidden="true" />;
   if (failed) return <UtensilsCrossed size={21} aria-hidden="true" className="text-food" />;
-  return <img src={`/dishes/${dishId}.jpg`} alt={name} className={`h-12 w-12 rounded-[14px] object-cover ${planned ? 'opacity-50' : ''}`} onError={() => setFailed(true)} />;
+  return (
+    <img
+      src={`/dishes/${dishId}.jpg`} alt={name}
+      className={`h-12 w-12 rounded-[14px] object-cover ${planned ? 'opacity-50' : ''}`}
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 const mealOrder: Meal[] = ['breakfast', 'lunch', 'dinner'];
@@ -95,7 +115,7 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
   const strengthName = strength ? t('strength.focusPlan', { focus: t(`strength.focus.${strength.focus}`) }) : null;
   const isRestDay = !schedule || (schedule.cardioPlanId === null && schedule.strengthFocus === null);
   const completed = data.weeklyLog[todayKey] === true;
-  const workout = loadWorkoutState();
+  const workout = useWorkoutState();
   const todaySessions = workout.sessions.filter((session) =>
     session.endedAt !== undefined && getLocalDateKey(new Date(session.endedAt)) === todayKey,
   );
@@ -105,7 +125,11 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
   );
   const streak = getStreak(data, today);
   const hour = today.getHours();
-  const greeting = hour < 11 ? tt('today.greeting.morning') : hour < 18 ? tt('today.greeting.afternoon') : tt('today.greeting.evening');
+  const greeting = hour < 11
+    ? tt('today.greeting.morning')
+    : hour < 18
+      ? tt('today.greeting.afternoon')
+      : tt('today.greeting.evening');
   const entries = data.mealLog[todayKey] ?? [];
   const meals = mealOrder.map((meal) => [...entries].reverse().find((entry) => entry.meal === meal));
   const plannedMeals = menu.weekStart === currentMondayKey(today)
@@ -133,7 +157,9 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
           <p className="text-xs font-medium text-muted tabular-nums">{formatDate(today)}</p>
           <h1 className="mt-1 text-[28px] font-extrabold leading-8 text-text">{greeting}</h1>
         </div>
-        <div className="flex items-center gap-1 rounded-full bg-fit/10 px-3 py-2 text-xs font-bold text-fit tabular-nums">
+        <div
+          className="flex items-center gap-1 rounded-full bg-fit/10 px-3 py-2 text-xs font-bold text-fit tabular-nums"
+        >
           <Flame size={16} aria-hidden="true" fill="currentColor" />
           {streak === 0 ? tt('today.streakStart') : tt('today.streak', { count: streak })}
         </div>
@@ -142,7 +168,10 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
       <Card className="p-3! shadow-[0_8px_24px_rgba(15,23,42,0.06)]" accent="food">
         {targets ? (
           <div className="flex items-center justify-between gap-3">
-            <CalorieRing eaten={nutrition.kcal} target={targets.kcal} label={tt('today.calories')} remainingLabel={tt('today.remaining')} overLabel={tt('today.over')} />
+            <CalorieRing
+              eaten={nutrition.kcal} target={targets.kcal} label={tt('today.calories')}
+              remainingLabel={tt('today.remaining')} overLabel={tt('today.over')}
+            />
             <div className="min-w-0 flex-1 space-y-3">
               <div>
                 <p className="text-sm font-bold text-text">{tt('today.calories')}</p>
@@ -154,7 +183,10 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
                   <span className="text-muted tabular-nums">{nutrition.proteinG} / {targets.proteinG} g</span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                  <div className="h-full rounded-full bg-food transition-[width]" style={{ width: `${Math.min(100, nutrition.proteinG / targets.proteinG * 100)}%` }} />
+                  <div
+                    className="h-full rounded-full bg-food transition-[width]"
+                    style={{ width: `${Math.min(100, nutrition.proteinG / targets.proteinG * 100)}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -209,7 +241,15 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
                   'transition-transform active:scale-[0.97]'
                 }
               >
-                <span className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${entry || planned ? 'bg-surface-2' : 'bg-food/10 text-food'}`}><MealImage dishId={entry?.dishId ?? planned?.dishId} name={name} planned={Boolean(planned)} /></span>
+                <span
+                  className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${
+                    entry || planned ? 'bg-surface-2' : 'bg-food/10 text-food'
+                  }`}
+                >
+                  <MealImage
+                    dishId={entry?.dishId ?? planned?.dishId} name={name} planned={Boolean(planned)}
+                  />
+                </span>
                 <span className="mt-1 w-full break-words text-xs font-semibold leading-4 text-text">
                   {entry ? name : planned ? tt('today.planned') : t(`meal.${meal}`)}
                 </span>
@@ -242,9 +282,21 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
               </div>
             )}
           </div>
-          {isRestDay ? <span className="shrink-0 rounded-full bg-surface-2 px-3 py-2 text-xs font-bold text-muted">{tt('today.rest')}</span> : (
-            <button type="button" aria-pressed={completed} onClick={toggleCompleted} className={`flex h-11 shrink-0 items-center gap-1.5 rounded-[14px] px-3 text-xs font-bold text-white transition-transform active:scale-[0.97] ${completed ? 'bg-ok' : 'bg-fit'}`}>
-              {completed && <Check size={16} aria-hidden="true" />}{completed ? tt('today.checkedIn') : tt('today.checkIn')}
+          {isRestDay ? (
+            <span className="shrink-0 rounded-full bg-surface-2 px-3 py-2 text-xs font-bold text-muted">
+              {tt('today.rest')}
+            </span>
+          ) : (
+            <button
+              type="button" aria-pressed={completed} onClick={toggleCompleted}
+              className={
+                'flex h-11 shrink-0 items-center gap-1.5 rounded-[14px] px-3 text-xs ' +
+                'font-bold text-white transition-transform active:scale-[0.97] ' +
+                (completed ? 'bg-ok' : 'bg-fit')
+              }
+            >
+              {completed && <Check size={16} aria-hidden="true" />}
+              {completed ? tt('today.checkedIn') : tt('today.checkIn')}
             </button>
           )}
         </div>
@@ -269,7 +321,9 @@ export function TodayPage({ data, setData, onOpenFood, onOpenStrength }: TodayPa
 
       <section className="pb-2">
         <h2 className="mb-2 text-[15px] font-extrabold text-text">{tt('today.recent')}</h2>
-        <div className="flex justify-between rounded-[16px] bg-surface px-3 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+        <div
+          className="flex justify-between rounded-[16px] bg-surface px-3 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
+        >
           {recentDays.map(({ date, key }) => (
             <div key={key} className="flex flex-col items-center gap-1 text-xs text-muted">
               <span>{formatDate(date, { weekday: 'narrow' })}</span>

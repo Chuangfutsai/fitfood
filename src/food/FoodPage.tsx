@@ -30,7 +30,7 @@ import { Wheel } from './Wheel';
 import { LanguageButton, useLang } from '../i18n/LanguageContext';
 import { recipeTranslations } from '../i18n/dataTranslations';
 import { recipes } from './recipes';
-import { getAvailableDishes, getLocalDateKey, getMealForTime } from '../stats';
+import { getAvailableDishes, getLocalDateKey, getMealForTime, shuffle } from '../stats';
 import { createMealId } from '../storage';
 import { TodayMeals } from './TodayMeals';
 import type { MealNotice } from './TodayMeals';
@@ -101,7 +101,8 @@ function HeroCard({ count, onOpenGoals }: { count: number; onOpenGoals: () => vo
       type="button"
       aria-label={t('goals.open')}
       onClick={onOpenGoals}
-      className="absolute right-[64px] top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-surface/90 text-food"
+      className="absolute right-[64px] top-3 z-20 flex h-11 w-11 items-center justify-center
+        rounded-full bg-surface/90 text-food"
     >
       <Target size={20} aria-hidden="true" />
     </button>
@@ -114,7 +115,8 @@ function HeroCard({ count, onOpenGoals }: { count: number; onOpenGoals: () => vo
         {goalButton}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <motion.div
-            className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center justify-center rounded-full bg-tomato"
+            className="absolute -right-10 -top-3 flex h-[140px] w-[140px] items-center
+              justify-center rounded-full bg-tomato"
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
           >
@@ -128,7 +130,8 @@ function HeroCard({ count, onOpenGoals }: { count: number; onOpenGoals: () => vo
             <Egg className="text-white" size={32} strokeWidth={2} />
           </motion.div>
           <motion.div
-            className="absolute right-9 top-[72px] flex h-[72px] w-[72px] items-center justify-center rounded-full bg-lettuce"
+            className="absolute right-9 top-[72px] flex h-[72px] w-[72px] items-center
+              justify-center rounded-full bg-lettuce"
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
           >
@@ -138,17 +141,20 @@ function HeroCard({ count, onOpenGoals }: { count: number; onOpenGoals: () => vo
 
         <div className="absolute left-5 top-5 z-10 max-w-[calc(100%-128px)]">
           <p className="text-xs leading-4 text-muted tabular-nums">{dateLabel}</p>
-          <p className="mt-2 truncate text-sm leading-5 text-text">
+          <p className="mt-2 break-words text-sm leading-5 text-text">
             {t('food.hero.greeting', { greeting })}
           </p>
         </div>
 
-        <div className="absolute bottom-5 left-5 z-10 max-w-[60%]">
+        <div className={`absolute left-5 z-10 max-w-[60%] ${lang === 'en' ? 'bottom-3' : 'bottom-5'}`}>
           <h1 className={`${lang === 'en' ? 'text-[24px]' : 'text-[28px]'} font-extrabold leading-8 text-text`}>
             <span className="block">{t('food.hero.titleFirst')}</span>
             <span className="block">{t('food.hero.titleSecond')}</span>
           </h1>
-          <span className="mt-2 inline-block max-w-full truncate rounded-full bg-surface px-3 py-1 text-xs font-bold leading-4 text-food tabular-nums">
+          <span
+            className="mt-2 inline-block max-w-full break-words rounded-full bg-surface px-3 py-1
+              text-xs font-bold leading-4 text-food tabular-nums"
+          >
             {t('food.hero.available', { count })}
           </span>
         </div>
@@ -198,7 +204,10 @@ function WeeklyMenu({ data, setData, onOpenDish }: {
   const [notice, setNotice] = useState<string | null>(null);
   const [undoPurchase, setUndoPurchase] = useState<(() => void) | null>(null);
   const weekStart = menu.weekStart || currentMondayKey();
-  const recipeKcal = useMemo(() => Object.fromEntries(Object.entries(recipes).map(([id, recipe]) => [id, recipe.kcal])), []);
+  const recipeKcal = useMemo(
+    () => Object.fromEntries(Object.entries(recipes).map(([id, recipe]) => [id, recipe.kcal])),
+    [],
+  );
   const plannerInput = useMemo(() => ({
     weekStart,
     dishes: data.dishes,
@@ -225,14 +234,24 @@ function WeeklyMenu({ data, setData, onOpenDish }: {
   }, [notice]);
 
   const setDays = (days: PlannedDay[]) => {
-    const nextList = shoppingList(days, data.dishes, data.ingredients, recipes, lang, recipeTranslations, mt('menu.shopping.seeRecipe'));
-    setMenu((previous) => ({ ...previous, weekStart, days, checked: reconcileChecked(previous.checked, nextList.items) }));
+    const nextList = shoppingList(
+      days, data.dishes, data.ingredients, recipes, lang, recipeTranslations,
+      mt('menu.shopping.seeRecipe'),
+    );
+    setMenu((previous) => ({
+      ...previous,
+      weekStart,
+      days,
+      checked: reconcileChecked(previous.checked, nextList.items),
+    }));
   };
   const createPlan = () => setDays(planWeek({ ...plannerInput, existingDays: menu.days, seed: Date.now() }));
   const toggleLock = (dateKey: string, meal: Meal) => setDays(menu.days.map((day) => day.dateKey === dateKey
     ? { ...day, meals: day.meals.map((item) => item.meal === meal ? { ...item, locked: !item.locked } : item) }
     : day));
-  const swapMeal = (dateKey: string, meal: Meal) => setDays(replacePlannedMeal({ ...plannerInput, seed: Date.now() }, menu.days, dateKey, meal));
+  const swapMeal = (dateKey: string, meal: Meal) => setDays(
+    replacePlannedMeal({ ...plannerInput, seed: Date.now() }, menu.days, dateKey, meal),
+  );
   const toggleChecked = (id: string) => setMenu((previous) => ({
     ...previous,
     checked: previous.checked.includes(id) ? previous.checked.filter((item) => item !== id) : [...previous.checked, id],
@@ -257,7 +276,13 @@ function WeeklyMenu({ data, setData, onOpenDish }: {
     });
   };
   const copyList = async () => {
-    const text = list.items.map((item) => `${tIngredient(item)}${lang === 'en' ? ': ' : '：'}${item.needs.map((need) => `${tDish(data.dishes.find((dish) => dish.id === need.dishId) ?? { id: need.dishId, name: need.dishId })} ${need.amount}`).join(lang === 'en' ? '; ' : '、')}`).join('\n');
+    const text = list.items.map((item) =>
+      `${tIngredient(item)}${lang === 'en' ? ': ' : '：'}${item.needs.map((need) =>
+        `${tDish(data.dishes.find((dish) => dish.id === need.dishId) ?? {
+          id: need.dishId, name: need.dishId,
+        })} ${need.amount}`,
+      ).join(lang === 'en' ? '; ' : '、')}`,
+    ).join('\n');
     try {
       if (navigator.share) await navigator.share({ title: mt('menu.view.shopping'), text });
       else await navigator.clipboard.writeText(text);
@@ -271,9 +296,26 @@ function WeeklyMenu({ data, setData, onOpenDish }: {
     return (
       <Card className="space-y-4 py-8 text-center shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
         <ClipboardList className="mx-auto text-food" size={40} aria-hidden="true" />
-        <div className="space-y-1"><h2 className="text-xl font-bold text-text">{mt('menu.empty.title')}</h2><p className="text-sm leading-6 text-muted">{mt('menu.empty.body')}</p></div>
-        <label className="mx-auto flex min-h-11 w-fit items-center gap-2 text-sm text-text"><input type="checkbox" checked={includeBreakfast} onChange={(event) => setIncludeBreakfast(event.target.checked)} />{mt('menu.breakfast')}</label>
-        <button type="button" className="mx-auto h-12 rounded-[14px] bg-food px-5 text-sm font-semibold text-white active:scale-[0.97]" onClick={createPlan}>{mt('menu.plan')}</button>
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-text">{mt('menu.empty.title')}</h2>
+          <p className="text-sm leading-6 text-muted">{mt('menu.empty.body')}</p>
+        </div>
+        <label className="mx-auto flex min-h-11 w-fit items-center gap-2 text-sm text-text">
+          <input
+            type="checkbox"
+            checked={includeBreakfast}
+            onChange={(event) => setIncludeBreakfast(event.target.checked)}
+          />
+          {mt('menu.breakfast')}
+        </label>
+        <button
+          type="button"
+          className="mx-auto h-12 rounded-[14px] bg-food px-5 text-sm font-semibold
+            text-white active:scale-[0.97]"
+          onClick={createPlan}
+        >
+          {mt('menu.plan')}
+        </button>
       </Card>
     );
   }
@@ -281,38 +323,216 @@ function WeeklyMenu({ data, setData, onOpenDish }: {
   return (
     <section className="space-y-4">
       <div className="flex gap-2">
-        <button type="button" onClick={() => setView('menu')} className={`min-h-11 flex-1 rounded-[14px] text-sm font-semibold ${view === 'menu' ? 'bg-food text-white' : 'bg-surface-2 text-muted'}`}>{mt('menu.view.menu')}</button>
-        <button type="button" onClick={() => setView('shopping')} className={`min-h-11 flex-1 rounded-[14px] text-sm font-semibold ${view === 'shopping' ? 'bg-food text-white' : 'bg-surface-2 text-muted'}`}>{mt('menu.view.shopping')}</button>
+        <button
+          type="button"
+          onClick={() => setView('menu')}
+          className={`min-h-11 flex-1 rounded-[14px] text-sm font-semibold ${
+            view === 'menu' ? 'bg-food text-white' : 'bg-surface-2 text-muted'
+          }`}
+        >
+          {mt('menu.view.menu')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setView('shopping')}
+          className={`min-h-11 flex-1 rounded-[14px] text-sm font-semibold ${
+            view === 'shopping' ? 'bg-food text-white' : 'bg-surface-2 text-muted'
+          }`}
+        >
+          {mt('menu.view.shopping')}
+        </button>
       </div>
       {view === 'menu' ? <>
         <div className="flex items-center justify-between gap-3">
-          <label className="flex min-h-11 items-center gap-2 text-sm text-text"><input type="checkbox" checked={includeBreakfast} onChange={(event) => setIncludeBreakfast(event.target.checked)} />{mt('menu.breakfast')}</label>
-          <button type="button" className="min-h-11 rounded-[14px] border border-line px-3 text-sm font-semibold text-food" onClick={createPlan}>{mt('menu.replan')}</button>
+          <label className="flex min-h-11 items-center gap-2 text-sm text-text">
+            <input
+              type="checkbox"
+              checked={includeBreakfast}
+              onChange={(event) => setIncludeBreakfast(event.target.checked)}
+            />
+            {mt('menu.breakfast')}
+          </label>
+          <button
+            type="button"
+            className="min-h-11 rounded-[14px] border border-line px-3 text-sm font-semibold text-food"
+            onClick={createPlan}
+          >
+            {mt('menu.replan')}
+          </button>
         </div>
         <div className="space-y-3">{menu.days.map((day) => {
           const date = new Date(`${day.dateKey}T12:00:00`);
           const kcal = day.meals.reduce((sum, item) => sum + (recipes[item.dishId]?.kcal ?? 0), 0);
           return <Card key={day.dateKey} className={`space-y-3 ${day.dateKey === today ? 'ring-2 ring-food/30' : ''}`}>
-            <div className="flex items-center justify-between gap-2"><div><h3 className="font-bold text-text">{mt(`menu.weekday.${(date.getDay() + 6) % 7}`)}</h3><p className="text-xs text-muted">{formatDate(date, { month: 'numeric', day: 'numeric' })}{day.dateKey === today ? ` · ${mt('menu.today')}` : ''}</p></div><div className="text-right text-xs font-semibold text-food">{mt('menu.kcal', { count: kcal })}{day.overTarget && <p className="mt-1 text-tomato">{mt('menu.overTarget')}</p>}</div></div>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-text">{mt(`menu.weekday.${(date.getDay() + 6) % 7}`)}</h3>
+                <p className="text-xs text-muted">
+                  {formatDate(date, { month: 'numeric', day: 'numeric' })}
+                  {day.dateKey === today ? ` · ${mt('menu.today')}` : ''}
+                </p>
+              </div>
+              <div className="text-right text-xs font-semibold text-food">
+                {mt('menu.kcal', { count: kcal })}
+                {day.overTarget && <p className="mt-1 text-tomato">{mt('menu.overTarget')}</p>}
+              </div>
+            </div>
             {day.meals.map((planned) => {
               const dish = data.dishes.find((item) => item.id === planned.dishId);
               if (!dish) return null;
-              return <div key={planned.meal} className="flex items-center gap-3 border-t border-line pt-3"><DishImage id={dish.id} name={tDish(dish)} className="h-14 w-14 shrink-0 rounded-[12px]" /><button type="button" className="min-w-0 flex-1 text-left" onClick={() => onOpenDish(dish.id)}><p className="text-xs text-muted">{t(`meal.${planned.meal}`)}</p><p className="truncate text-sm font-semibold text-text">{tDish(dish)}</p>{planned.overTarget && <p className="text-xs text-tomato">{mt('menu.overTarget')}</p>}</button><div className="flex shrink-0 gap-1"><button aria-label={planned.locked ? mt('menu.unlock') : mt('menu.lock')} type="button" className={`flex h-10 w-10 items-center justify-center rounded-full ${planned.locked ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted'}`} onClick={() => toggleLock(day.dateKey, planned.meal)}><LockKeyhole size={16} /></button><button type="button" className="min-h-10 rounded-[10px] bg-surface-2 px-2 text-xs font-semibold text-food" onClick={() => swapMeal(day.dateKey, planned.meal)}>{mt('menu.swap')}</button></div></div>;
+              return (
+                <div key={planned.meal} className="flex items-center gap-3 border-t border-line pt-3">
+                  <DishImage
+                    id={dish.id}
+                    name={tDish(dish)}
+                    className="h-14 w-14 shrink-0 rounded-[12px]"
+                  />
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => onOpenDish(dish.id)}
+                  >
+                    <p className="text-xs text-muted">{t(`meal.${planned.meal}`)}</p>
+                    <p className="break-words text-sm font-semibold text-text">{tDish(dish)}</p>
+                    {planned.overTarget && <p className="text-xs text-tomato">{mt('menu.overTarget')}</p>}
+                  </button>
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      aria-label={planned.locked ? mt('menu.unlock') : mt('menu.lock')}
+                      type="button"
+                      className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                        planned.locked ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted'
+                      }`}
+                      onClick={() => toggleLock(day.dateKey, planned.meal)}
+                    >
+                      <LockKeyhole size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="min-h-10 rounded-[10px] bg-surface-2 px-2 text-xs font-semibold text-food"
+                      onClick={() => swapMeal(day.dateKey, planned.meal)}
+                    >
+                      {mt('menu.swap')}
+                    </button>
+                  </div>
+                </div>
+              );
             })}
           </Card>;
         })}</div>
       </> : <div className="space-y-4">
-        <div className="flex gap-2"><button type="button" className="flex min-h-11 flex-1 items-center justify-center gap-1 rounded-[14px] border border-line text-sm font-semibold text-food" onClick={() => void copyList()}><ShoppingCart size={17} />{mt('menu.shopping.copy')}</button><button type="button" disabled={menu.checked.length === 0} className="min-h-11 flex-1 rounded-[14px] bg-food text-sm font-semibold text-white disabled:opacity-40" onClick={markBought}>{mt('menu.shopping.done')}</button></div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="flex min-h-11 flex-1 items-center justify-center gap-1 rounded-[14px]
+              border border-line text-sm font-semibold text-food"
+            onClick={() => void copyList()}
+          >
+            <ShoppingCart size={17} />{mt('menu.shopping.copy')}
+          </button>
+          <button
+            type="button"
+            disabled={menu.checked.length === 0}
+            className="min-h-11 flex-1 rounded-[14px] bg-food text-sm font-semibold
+              text-white disabled:opacity-40"
+            onClick={markBought}
+          >
+            {mt('menu.shopping.done')}
+          </button>
+        </div>
         {(['protein', 'veg', 'carb', 'other'] as const).map((category) => {
           const items = list.items.filter((item) => item.category === category);
           if (items.length === 0) return null;
-          return <Card key={category} className="space-y-2"><h3 className="font-bold text-text">{t(`category.${category}`)}</h3>{items.map((item) => <label key={item.id} className="flex min-h-11 items-start gap-3 border-t border-line py-2"><input className="mt-1" type="checkbox" checked={menu.checked.includes(item.id)} onChange={() => toggleChecked(item.id)} /><span className="min-w-0"><span className={`block text-sm font-semibold ${menu.checked.includes(item.id) ? 'text-muted line-through' : 'text-text'}`}>{tIngredient(item)}</span><span className="block text-xs leading-5 text-muted">{mt('menu.shopping.needs')}{item.needs.map((need) => `${tDish(data.dishes.find((dish) => dish.id === need.dishId) ?? { id: need.dishId, name: need.dishId })} ${need.amount}`).join('、')}</span></span></label>)}</Card>;
+          return <Card key={category} className="space-y-2">
+            <h3 className="font-bold text-text">{t(`category.${category}`)}</h3>
+            {items.map((item) => <label
+              key={item.id}
+              className="flex min-h-11 items-start gap-3 border-t border-line py-2"
+            >
+              <input
+                className="mt-1"
+                type="checkbox"
+                checked={menu.checked.includes(item.id)}
+                onChange={() => toggleChecked(item.id)}
+              />
+              <span className="min-w-0">
+                <span className={`block text-sm font-semibold ${
+                  menu.checked.includes(item.id) ? 'text-muted line-through' : 'text-text'
+                }`}>{tIngredient(item)}</span>
+                <span className="block text-xs leading-5 text-muted">
+                  {mt('menu.shopping.needs')}
+                  {item.needs.map((need) => `${tDish(data.dishes.find(
+                    (dish) => dish.id === need.dishId,
+                  ) ?? { id: need.dishId, name: need.dishId })} ${need.amount}`).join('、')}
+                </span>
+              </span>
+            </label>)}
+          </Card>;
         })}
         {list.items.length === 0 && <Card className="text-center text-sm text-muted">{mt('menu.shopping.empty')}</Card>}
-        <Card className="space-y-2"><h3 className="font-bold text-text">{mt('menu.shopping.confirmed')}</h3>{list.seasonings.length > 0 ? <p className="text-sm leading-6 text-muted">{list.seasonings.join('、')}</p> : <p className="text-sm text-muted">—</p>}</Card>
-        <Card className="space-y-3"><h3 className="font-bold text-text">{mt('menu.shopping.extras')}</h3>{menu.extras.map((extra) => <div key={extra.id} className="flex items-center gap-2"><input type="checkbox" checked={extra.checked} onChange={() => setMenu((previous) => ({ ...previous, extras: previous.extras.map((item) => item.id === extra.id ? { ...item, checked: !item.checked } : item) }))} /><span className={`min-w-0 flex-1 text-sm ${extra.checked ? 'text-muted line-through' : 'text-text'}`}>{extra.text}</span><button type="button" aria-label={mt('menu.shopping.delete')} className="flex h-10 w-10 items-center justify-center text-muted" onClick={() => setMenu((previous) => removeMenuExtra(previous, extra.id))}><Trash2 size={17} /></button></div>)}<div className="flex gap-2"><input value={extraText} onChange={(event) => setExtraText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addExtra(); }} className="min-w-0 flex-1 rounded-[12px] border border-line bg-surface px-3 text-sm text-text" placeholder={mt('menu.shopping.placeholder')} /><button type="button" aria-label={mt('menu.shopping.add')} onClick={addExtra} className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-food text-white"><Plus size={18} /></button></div></Card>
+        <Card className="space-y-2">
+          <h3 className="font-bold text-text">{mt('menu.shopping.confirmed')}</h3>
+          {list.seasonings.length > 0
+            ? <p className="text-sm leading-6 text-muted">{list.seasonings.join('、')}</p>
+            : <p className="text-sm text-muted">—</p>}
+        </Card>
+        <Card className="space-y-3">
+          <h3 className="font-bold text-text">{mt('menu.shopping.extras')}</h3>
+          {menu.extras.map((extra) => <div key={extra.id} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={extra.checked}
+              onChange={() => setMenu((previous) => ({
+                ...previous,
+                extras: previous.extras.map((item) =>
+                  item.id === extra.id ? { ...item, checked: !item.checked } : item),
+              }))}
+            />
+            <span className={`min-w-0 flex-1 text-sm ${
+              extra.checked ? 'text-muted line-through' : 'text-text'
+            }`}>{extra.text}</span>
+            <button
+              type="button"
+              aria-label={mt('menu.shopping.delete')}
+              className="flex h-10 w-10 items-center justify-center text-muted"
+              onClick={() => setMenu((previous) => removeMenuExtra(previous, extra.id))}
+            >
+              <Trash2 size={17} />
+            </button>
+          </div>)}
+          <div className="flex gap-2">
+            <input
+              value={extraText}
+              onChange={(event) => setExtraText(event.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') addExtra(); }}
+              className="min-w-0 flex-1 rounded-[12px] border border-line bg-surface px-3 text-sm text-text"
+              placeholder={mt('menu.shopping.placeholder')}
+            />
+            <button
+              type="button"
+              aria-label={mt('menu.shopping.add')}
+              onClick={addExtra}
+              className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-food text-white"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+        </Card>
       </div>}
-      {notice && <div role="status" className="fixed inset-x-5 bottom-[calc(env(safe-area-inset-bottom)+80px)] z-[70] mx-auto max-w-[440px] rounded-[14px] border border-line bg-surface px-4 py-3 text-sm font-medium text-text shadow-lg">{notice} {undoPurchase && <button type="button" className="ml-2 text-food" onClick={() => { undoPurchase(); setUndoPurchase(null); setNotice(null); }}>{mt('menu.shopping.undo')}</button>}</div>}
+      {notice && <div
+        role="status"
+        className="fixed inset-x-5 bottom-[calc(env(safe-area-inset-bottom)+80px)] z-[70]
+          mx-auto max-w-[440px] rounded-[14px] border border-line bg-surface px-4 py-3
+          text-sm font-medium text-text shadow-lg"
+      >
+        {notice} {undoPurchase && <button
+          type="button"
+          className="ml-2 text-food"
+          onClick={() => { undoPurchase(); setUndoPurchase(null); setNotice(null); }}
+        >
+          {mt('menu.shopping.undo')}
+        </button>}
+      </div>}
     </section>
   );
 }
@@ -352,7 +572,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
   ).split('{pantry}');
 
   const wheelDishes = useMemo(() => {
-    const shuffled = [...availableDishes].sort(() => Math.random() - 0.5);
+    const shuffled = shuffle(availableDishes);
 
     return shuffled.slice(0, 8);
   }, [availableDishes, shuffleKey]);
@@ -435,7 +655,9 @@ export function FoodPage({ data, setData }: FoodPageProps) {
         <section className="space-y-4">
           <div className={wheelBusy ? 'pointer-events-none opacity-60' : undefined} aria-disabled={wheelBusy}>
             <SegmentedTabs
-              options={(['breakfast', 'lunch', 'dinner'] as const).map((value) => ({ value, label: t(`meal.${value}`) }))}
+              options={(['breakfast', 'lunch', 'dinner'] as const).map((value) => ({
+                value, label: t(`meal.${value}`),
+              }))}
               value={meal}
               onChange={(value) => { if (!wheelBusy) setMeal(value as Meal); }}
               accent="food"
@@ -445,25 +667,27 @@ export function FoodPage({ data, setData }: FoodPageProps) {
           <div className="space-y-2">
             {availableDishes.length >= 9 ? (
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-muted">
+                <p className="min-w-0 flex-1 text-xs text-muted">
                   {t('food.wheel.selection', { count: availableDishes.length, selected: wheelDishes.length })}
                 </p>
                 <button
                   type="button"
-                  className="flex h-11 shrink-0 items-center gap-1 text-sm font-medium text-food transition-transform active:scale-[0.97] disabled:opacity-50"
+                  className="flex h-11 shrink-0 items-center gap-1 text-sm font-medium text-food
+                    transition-transform active:scale-[0.97] disabled:opacity-50"
                   onClick={shuffleWheel}
                   disabled={wheelBusy}
                 >
                   <Shuffle size={16} />
-                  <span className="truncate">{t('food.wheel.shuffle')}</span>
+                  <span>{t('food.wheel.shuffle')}</span>
                 </button>
               </div>
             ) : availableDishes.length > 0 ? (
-              <p className="whitespace-nowrap text-xs leading-5 text-muted">
+              <p className="text-xs leading-5 text-muted">
                 {stockHintBefore}
                 <button
                   type="button"
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold text-food underline underline-offset-2"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold
+                    text-food underline underline-offset-2"
                   onClick={() => setActiveTab('pantry')}
                 >
                   {t('food.wheel.pantryLink')}
@@ -500,7 +724,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                 </div>
                 <button
                   type="button"
-                  className="h-12 w-full rounded-[14px] bg-food px-4 text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+                  className="h-12 w-full rounded-[14px] bg-food px-4 text-sm font-semibold
+                    text-white transition-transform active:scale-[0.97]"
                   onClick={() => openDish(wheelDishes[0].id)}
                 >
                   {t('food.result.accept')}
@@ -513,7 +738,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
               </p>
               <button
                 type="button"
-                className="h-11 rounded-[14px] bg-food px-4 text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+                className="h-11 rounded-[14px] bg-food px-4 text-sm font-semibold
+                  text-white transition-transform active:scale-[0.97]"
                 onClick={() => setActiveTab('pantry')}
               >
                 {t('food.wheel.pantry')}
@@ -536,10 +762,32 @@ export function FoodPage({ data, setData }: FoodPageProps) {
             ? recipeTranslations[resultDish.id] ?? sourceRecipe
             : sourceRecipe;
           const tutorials = [
-            { key: 'youtube', Icon: CirclePlay, href: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(t('recipe.searchMethod', { name: tDish(resultDish) })) },
-            { key: 'bilibili', Icon: TvMinimal, href: 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(t('recipe.chineseMethod', { name: resultDish.name })) },
-            { key: 'icook', Icon: BookOpen, href: 'https://icook.tw/search/' + encodeURIComponent(resultDish.name) + '/' },
-            { key: 'google', Icon: Search, href: 'https://www.google.com/search?q=' + encodeURIComponent(t('recipe.searchRecipe', { name: tDish(resultDish) })) },
+            {
+              key: 'youtube',
+              Icon: CirclePlay,
+              href: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(
+                t('recipe.searchMethod', { name: tDish(resultDish) }),
+              ),
+            },
+            {
+              key: 'bilibili',
+              Icon: TvMinimal,
+              href: 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(
+                t('recipe.chineseMethod', { name: resultDish.name }),
+              ),
+            },
+            {
+              key: 'icook',
+              Icon: BookOpen,
+              href: 'https://icook.tw/search/' + encodeURIComponent(resultDish.name) + '/',
+            },
+            {
+              key: 'google',
+              Icon: Search,
+              href: 'https://www.google.com/search?q=' + encodeURIComponent(
+                t('recipe.searchRecipe', { name: tDish(resultDish) }),
+              ),
+            },
           ];
 
           return (
@@ -583,7 +831,9 @@ export function FoodPage({ data, setData }: FoodPageProps) {
 
                       return (
                         <li key={originalName} className="grid grid-cols-2 gap-3 py-2 text-sm leading-6">
-                          <span className={missing ? 'min-w-0 break-words text-muted line-through' : 'min-w-0 break-words text-text'}>
+                          <span className={missing
+                            ? 'min-w-0 break-words text-muted line-through'
+                            : 'min-w-0 break-words text-text'}>
                             {item.name}
                           </span>
                           <span className="min-w-0 break-words text-right text-muted">{item.amount}</span>
@@ -610,7 +860,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                   <ol className="space-y-4">
                     {recipe.steps.map((step, index) => (
                       <li key={index} className="flex items-start gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-food text-sm font-bold text-white tabular-nums">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center
+                          rounded-full bg-food text-sm font-bold text-white tabular-nums">
                           {index + 1}
                         </span>
                         <p className="min-w-0 flex-1 break-words text-[15px] leading-7 text-text">{step}</p>
@@ -637,7 +888,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                     return (
                       <span
                         key={ingredientId}
-                        className={'max-w-full truncate rounded-full px-3 py-2 text-sm ' + (inStock ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted line-through')}
+                        className={'max-w-full break-words rounded-full px-3 py-2 text-sm ' +
+                          (inStock ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted line-through')}
                       >
                         {ingredient ? tIngredient(ingredient) : t('dishes.deletedIngredient')}
                       </span>
@@ -657,10 +909,12 @@ export function FoodPage({ data, setData }: FoodPageProps) {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex min-h-11 min-w-0 items-center gap-2 rounded-[14px] border border-line bg-surface px-3 py-2 text-sm font-medium text-text transition-transform active:scale-[0.97]"
+                    className="flex min-h-11 min-w-0 items-center gap-2 rounded-[14px] border border-line
+                      bg-surface px-3 py-2 text-sm font-medium text-text transition-transform
+                      active:scale-[0.97]"
                   >
                     <Icon size={18} className="shrink-0 text-food" aria-hidden="true" />
-                    <span className="min-w-0 truncate">{t('recipe.' + key)}</span>
+                    <span className="min-w-0 break-words">{t('recipe.' + key)}</span>
                   </a>
                 ))}
               </div>
@@ -668,19 +922,22 @@ export function FoodPage({ data, setData }: FoodPageProps) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className="h-12 min-w-0 truncate rounded-[14px] border border-line bg-surface px-2 text-sm font-semibold text-text transition-transform active:scale-[0.97]"
+                className="min-h-12 min-w-0 rounded-[14px] border border-line bg-surface px-2 py-2
+                  text-sm font-semibold text-text transition-transform active:scale-[0.97]"
                 onClick={() => setResultDishId(null)}
               >
                 {t('food.result.again')}
               </button>
               <button
                 type="button"
-                className={`flex h-12 min-w-0 items-center justify-center gap-1 rounded-[14px] px-2 text-sm font-semibold text-white transition-transform active:scale-[0.97] ${acceptedMealId ? 'bg-ok' : 'bg-food'}`}
+                className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-[14px]
+                  px-2 py-2 text-sm font-semibold text-white transition-transform active:scale-[0.97]
+                  ${acceptedMealId ? 'bg-ok' : 'bg-food'}`}
                 onClick={recordMeal}
                 disabled={acceptedMealId !== null}
               >
                 {acceptedMealId && <Check size={18} className="shrink-0" aria-hidden="true" />}
-                <span className="truncate">{t(acceptedMealId ? 'food.result.added' : 'food.result.accept')}</span>
+                <span className="break-words">{t(acceptedMealId ? 'food.result.added' : 'food.result.accept')}</span>
               </button>
             </div>
           </div>
@@ -692,7 +949,11 @@ export function FoodPage({ data, setData }: FoodPageProps) {
           <motion.div
             role="status"
             aria-live="polite"
-            className="pointer-events-none fixed inset-x-5 bottom-[calc(env(safe-area-inset-bottom)+80px)] z-[70] mx-auto flex max-w-[440px] items-center justify-between gap-3 rounded-[14px] border border-line bg-surface px-4 py-2 text-sm font-medium text-text shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+            className="pointer-events-none fixed inset-x-5
+              bottom-[calc(env(safe-area-inset-bottom)+80px)] z-[70] mx-auto flex max-w-[440px]
+              items-center justify-between gap-3 rounded-[14px] border border-line bg-surface
+              px-4 py-2 text-sm font-medium text-text
+              shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
@@ -701,7 +962,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
             <span className="min-w-0">{t(mealNotice.messageKey)}</span>
             <button
               type="button"
-              className="pointer-events-auto min-h-11 min-w-11 shrink-0 text-food transition-transform active:scale-[0.97]"
+              className="pointer-events-auto min-h-11 min-w-11 shrink-0 text-food
+                transition-transform active:scale-[0.97]"
               onClick={() => {
                 mealNotice.undo();
                 setMealNotice(null);

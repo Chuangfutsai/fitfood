@@ -75,9 +75,9 @@ export function WorkoutSummary({
         </button>
       </header>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <div className="rounded-[14px] bg-fit/10 p-3">
-          <p className="text-[11px] font-semibold text-muted">
+          <p className="text-xs font-semibold text-muted">
             {t("summary.duration")}
           </p>
           <p className="mt-1 text-lg font-extrabold text-text">
@@ -85,15 +85,15 @@ export function WorkoutSummary({
           </p>
         </div>
         <div className="rounded-[14px] bg-fit/10 p-3">
-          <p className="text-[11px] font-semibold text-muted">
+          <p className="text-xs font-semibold text-muted">
             {t("summary.sets")}
           </p>
           <p className="mt-1 text-lg font-extrabold tabular-nums text-text">
             {completedSetCount(session)}
           </p>
         </div>
-        <div className="rounded-[14px] bg-fit/10 p-3">
-          <p className="text-[11px] font-semibold text-muted">
+        <div className="col-span-2 rounded-[14px] bg-fit/10 p-3">
+          <p className="text-xs font-semibold text-muted">
             {t("summary.volume")}
           </p>
           <p className="mt-1 text-lg font-extrabold tabular-nums text-text">
@@ -115,13 +115,13 @@ export function WorkoutSummary({
             {achievements.map((record) => (
               <li
                 key={record.exerciseId}
-                className="flex items-center gap-3 rounded-[14px] bg-surface-2 p-3"
+                className="flex items-start gap-3 rounded-[14px] bg-surface-2 p-3"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-fit text-white">
                   <Check size={17} aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-text">
+                  <p className="break-words text-sm font-bold text-text">
                     {exerciseName(record.exerciseId, lang)}
                   </p>
                   <p className="mt-0.5 text-xs text-muted tabular-nums">
@@ -129,7 +129,7 @@ export function WorkoutSummary({
                   </p>
                 </div>
                 {firstTime.has(record.exerciseId) && (
-                  <span className="shrink-0 rounded-full bg-fit/10 px-2 py-1 text-[11px] font-bold text-fit">
+                  <span className="shrink-0 rounded-full bg-fit/10 px-2 py-1 text-xs font-bold text-fit">
                     {t("summary.firstTime")}
                   </span>
                 )}

@@ -57,7 +57,8 @@ function LanguageProviderContent({ children }: { children: ReactNode }) {
       );
     },
     tDish: (dish) => lang === 'zh-Hant' ? dish.name : dishTranslations[dish.id]?.[lang] ?? dish.name,
-    tIngredient: (ingredient) => lang === 'zh-Hant' ? ingredient.name : ingredientTranslations[ingredient.id]?.[lang] ?? ingredient.name,
+    tIngredient: (ingredient) =>
+      lang === 'zh-Hant' ? ingredient.name : ingredientTranslations[ingredient.id]?.[lang] ?? ingredient.name,
     tCardio: (plan) => {
       const translated = lang === 'zh-Hant' ? undefined : cardioTranslations[plan.id]?.[lang];
       return translated ? { ...plan, name: translated.name, steps: [...translated.steps] } : plan;
@@ -94,7 +95,11 @@ export function LanguageButton({ accent, SheetComponent }: { accent: 'food' | 'f
       <button
         type="button"
         aria-label={t('language.choose')}
-        className={`absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-surface/90 transition-transform active:scale-[0.97] ${accent === 'food' ? 'text-food' : 'text-fit'}`}
+        className={
+          'absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center ' +
+          'rounded-full bg-surface/90 transition-transform active:scale-[0.97] ' +
+          (accent === 'food' ? 'text-food' : 'text-fit')
+        }
         onClick={() => setOpen(true)}
       >
         <Languages size={22} aria-hidden="true" />
@@ -108,11 +113,20 @@ export function LanguageButton({ accent, SheetComponent }: { accent: 'food' | 'f
                 type="button"
                 lang={language}
                 aria-pressed={lang === language}
-                className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[14px] px-3 text-left text-text transition-transform active:scale-[0.97]"
+                className={
+                  'flex min-h-11 w-full items-center justify-between gap-3 rounded-[14px] ' +
+                  'px-3 text-left text-text transition-transform active:scale-[0.97]'
+                }
                 onClick={() => { setLang(language); setOpen(false); }}
               >
                 <span className="min-w-0 truncate">{t(`language.${language}`)}</span>
-                {lang === language && <Check size={20} aria-hidden="true" className={`shrink-0 ${accent === 'food' ? 'text-food' : 'text-fit'}`} />}
+                {lang === language && (
+                  <Check
+                    size={20}
+                    aria-hidden="true"
+                    className={`shrink-0 ${accent === 'food' ? 'text-food' : 'text-fit'}`}
+                  />
+                )}
               </button>
             ))}
           </div>
