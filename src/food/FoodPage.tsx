@@ -14,6 +14,11 @@ import {
   TvMinimal,
   UtensilsCrossed,
   CirclePlay,
+  ClipboardList,
+  LockKeyhole,
+  Plus,
+  ShoppingCart,
+  Trash2,
 } from 'lucide-react';
 import type { AppData, Meal } from '../types';
 import { Card } from '../ui/Card';
@@ -30,6 +35,11 @@ import { createMealId } from '../storage';
 import { TodayMeals } from './TodayMeals';
 import type { MealNotice } from './TodayMeals';
 import { GoalSheet } from './GoalSheet';
+import { addMenuExtra, removeMenuExtra, useMenuStore } from './menu/menuStore';
+import { planWeek, replacePlannedMeal } from './menu/planWeek';
+import { markIngredientsInStock, reconcileChecked, shoppingList } from './menu/shoppingList';
+import type { PlannedDay } from './menu/menuTypes';
+import { useMenuText } from './menu/useMenuText';
 
 interface FoodPageProps {
   data: AppData;
@@ -44,6 +54,7 @@ interface DishImageProps {
 
 const foodTabs = [
   { value: 'wheel', label: 'food.tab.wheel' },
+  { value: 'menu', label: 'menu.tab.week' },
   { value: 'pantry', label: 'food.tab.pantry' },
   { value: 'dishes', label: 'food.tab.dishes' },
 ];
@@ -166,8 +177,149 @@ function HeroCard({ count, onOpenGoals }: { count: number; onOpenGoals: () => vo
   );
 }
 
+function currentMondayKey() {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+  return getLocalDateKey(date);
+}
+
+function WeeklyMenu({ data, setData, onOpenDish }: {
+  data: AppData;
+  setData: FoodPageProps['setData'];
+  onOpenDish: (id: string) => void;
+}) {
+  const { lang, t, tDish, tIngredient, formatDate } = useLang();
+  const mt = useMenuText();
+  const { menu, setMenu } = useMenuStore();
+  const [view, setView] = useState<'menu' | 'shopping'>('menu');
+  const [includeBreakfast, setIncludeBreakfast] = useState(false);
+  const [extraText, setExtraText] = useState('');
+  const [notice, setNotice] = useState<string | null>(null);
+  const [undoPurchase, setUndoPurchase] = useState<(() => void) | null>(null);
+  const weekStart = menu.weekStart || currentMondayKey();
+  const recipeKcal = useMemo(() => Object.fromEntries(Object.entries(recipes).map(([id, recipe]) => [id, recipe.kcal])), []);
+  const plannerInput = useMemo(() => ({
+    weekStart,
+    dishes: data.dishes,
+    ingredients: data.ingredients,
+    recipeKcal,
+    profile: data.profile,
+    includeBreakfast,
+  }), [weekStart, data.dishes, data.ingredients, recipeKcal, data.profile, includeBreakfast]);
+  const list = useMemo(() => shoppingList(
+    menu.days,
+    data.dishes,
+    data.ingredients,
+    recipes,
+    lang,
+    recipeTranslations,
+    mt('menu.shopping.seeRecipe'),
+  ), [menu.days, data.dishes, data.ingredients, lang, mt]);
+  const today = getLocalDateKey(new Date());
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => { setNotice(null); setUndoPurchase(null); }, 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  const setDays = (days: PlannedDay[]) => {
+    const nextList = shoppingList(days, data.dishes, data.ingredients, recipes, lang, recipeTranslations, mt('menu.shopping.seeRecipe'));
+    setMenu((previous) => ({ ...previous, weekStart, days, checked: reconcileChecked(previous.checked, nextList.items) }));
+  };
+  const createPlan = () => setDays(planWeek({ ...plannerInput, existingDays: menu.days, seed: Date.now() }));
+  const toggleLock = (dateKey: string, meal: Meal) => setDays(menu.days.map((day) => day.dateKey === dateKey
+    ? { ...day, meals: day.meals.map((item) => item.meal === meal ? { ...item, locked: !item.locked } : item) }
+    : day));
+  const swapMeal = (dateKey: string, meal: Meal) => setDays(replacePlannedMeal({ ...plannerInput, seed: Date.now() }, menu.days, dateKey, meal));
+  const toggleChecked = (id: string) => setMenu((previous) => ({
+    ...previous,
+    checked: previous.checked.includes(id) ? previous.checked.filter((item) => item !== id) : [...previous.checked, id],
+  }));
+  const addExtra = () => {
+    const text = extraText.trim();
+    if (!text) return;
+    setMenu((previous) => addMenuExtra(previous, text, `extra-${Date.now()}`));
+    setExtraText('');
+  };
+  const markBought = () => {
+    const checked = new Set(menu.checked);
+    if (checked.size === 0) return;
+    const priorIngredients = data.ingredients;
+    const priorChecked = menu.checked;
+    setData((previous) => ({ ...previous, ingredients: markIngredientsInStock(previous.ingredients, [...checked]) }));
+    setMenu((previous) => ({ ...previous, checked: [] }));
+    setNotice(mt('menu.shopping.doneNotice'));
+    setUndoPurchase(() => () => {
+      setData((previous) => ({ ...previous, ingredients: priorIngredients }));
+      setMenu((previous) => ({ ...previous, checked: priorChecked }));
+    });
+  };
+  const copyList = async () => {
+    const text = list.items.map((item) => `${tIngredient(item)}${lang === 'en' ? ': ' : '：'}${item.needs.map((need) => `${tDish(data.dishes.find((dish) => dish.id === need.dishId) ?? { id: need.dishId, name: need.dishId })} ${need.amount}`).join(lang === 'en' ? '; ' : '、')}`).join('\n');
+    try {
+      if (navigator.share) await navigator.share({ title: mt('menu.view.shopping'), text });
+      else await navigator.clipboard.writeText(text);
+      setNotice(mt('menu.shopping.copied'));
+    } catch {
+      // A cancelled native share sheet should not interrupt menu planning.
+    }
+  };
+
+  if (menu.days.length === 0) {
+    return (
+      <Card className="space-y-4 py-8 text-center shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+        <ClipboardList className="mx-auto text-food" size={40} aria-hidden="true" />
+        <div className="space-y-1"><h2 className="text-xl font-bold text-text">{mt('menu.empty.title')}</h2><p className="text-sm leading-6 text-muted">{mt('menu.empty.body')}</p></div>
+        <label className="mx-auto flex min-h-11 w-fit items-center gap-2 text-sm text-text"><input type="checkbox" checked={includeBreakfast} onChange={(event) => setIncludeBreakfast(event.target.checked)} />{mt('menu.breakfast')}</label>
+        <button type="button" className="mx-auto h-12 rounded-[14px] bg-food px-5 text-sm font-semibold text-white active:scale-[0.97]" onClick={createPlan}>{mt('menu.plan')}</button>
+      </Card>
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setView('menu')} className={`min-h-11 flex-1 rounded-[14px] text-sm font-semibold ${view === 'menu' ? 'bg-food text-white' : 'bg-surface-2 text-muted'}`}>{mt('menu.view.menu')}</button>
+        <button type="button" onClick={() => setView('shopping')} className={`min-h-11 flex-1 rounded-[14px] text-sm font-semibold ${view === 'shopping' ? 'bg-food text-white' : 'bg-surface-2 text-muted'}`}>{mt('menu.view.shopping')}</button>
+      </div>
+      {view === 'menu' ? <>
+        <div className="flex items-center justify-between gap-3">
+          <label className="flex min-h-11 items-center gap-2 text-sm text-text"><input type="checkbox" checked={includeBreakfast} onChange={(event) => setIncludeBreakfast(event.target.checked)} />{mt('menu.breakfast')}</label>
+          <button type="button" className="min-h-11 rounded-[14px] border border-line px-3 text-sm font-semibold text-food" onClick={createPlan}>{mt('menu.replan')}</button>
+        </div>
+        <div className="space-y-3">{menu.days.map((day) => {
+          const date = new Date(`${day.dateKey}T12:00:00`);
+          const kcal = day.meals.reduce((sum, item) => sum + (recipes[item.dishId]?.kcal ?? 0), 0);
+          return <Card key={day.dateKey} className={`space-y-3 ${day.dateKey === today ? 'ring-2 ring-food/30' : ''}`}>
+            <div className="flex items-center justify-between gap-2"><div><h3 className="font-bold text-text">{mt(`menu.weekday.${(date.getDay() + 6) % 7}`)}</h3><p className="text-xs text-muted">{formatDate(date, { month: 'numeric', day: 'numeric' })}{day.dateKey === today ? ` · ${mt('menu.today')}` : ''}</p></div><div className="text-right text-xs font-semibold text-food">{mt('menu.kcal', { count: kcal })}{day.overTarget && <p className="mt-1 text-tomato">{mt('menu.overTarget')}</p>}</div></div>
+            {day.meals.map((planned) => {
+              const dish = data.dishes.find((item) => item.id === planned.dishId);
+              if (!dish) return null;
+              return <div key={planned.meal} className="flex items-center gap-3 border-t border-line pt-3"><DishImage id={dish.id} name={tDish(dish)} className="h-14 w-14 shrink-0 rounded-[12px]" /><button type="button" className="min-w-0 flex-1 text-left" onClick={() => onOpenDish(dish.id)}><p className="text-xs text-muted">{t(`meal.${planned.meal}`)}</p><p className="truncate text-sm font-semibold text-text">{tDish(dish)}</p>{planned.overTarget && <p className="text-xs text-tomato">{mt('menu.overTarget')}</p>}</button><div className="flex shrink-0 gap-1"><button aria-label={planned.locked ? mt('menu.unlock') : mt('menu.lock')} type="button" className={`flex h-10 w-10 items-center justify-center rounded-full ${planned.locked ? 'bg-food/10 text-food' : 'bg-surface-2 text-muted'}`} onClick={() => toggleLock(day.dateKey, planned.meal)}><LockKeyhole size={16} /></button><button type="button" className="min-h-10 rounded-[10px] bg-surface-2 px-2 text-xs font-semibold text-food" onClick={() => swapMeal(day.dateKey, planned.meal)}>{mt('menu.swap')}</button></div></div>;
+            })}
+          </Card>;
+        })}</div>
+      </> : <div className="space-y-4">
+        <div className="flex gap-2"><button type="button" className="flex min-h-11 flex-1 items-center justify-center gap-1 rounded-[14px] border border-line text-sm font-semibold text-food" onClick={() => void copyList()}><ShoppingCart size={17} />{mt('menu.shopping.copy')}</button><button type="button" disabled={menu.checked.length === 0} className="min-h-11 flex-1 rounded-[14px] bg-food text-sm font-semibold text-white disabled:opacity-40" onClick={markBought}>{mt('menu.shopping.done')}</button></div>
+        {(['protein', 'veg', 'carb', 'other'] as const).map((category) => {
+          const items = list.items.filter((item) => item.category === category);
+          if (items.length === 0) return null;
+          return <Card key={category} className="space-y-2"><h3 className="font-bold text-text">{t(`category.${category}`)}</h3>{items.map((item) => <label key={item.id} className="flex min-h-11 items-start gap-3 border-t border-line py-2"><input className="mt-1" type="checkbox" checked={menu.checked.includes(item.id)} onChange={() => toggleChecked(item.id)} /><span className="min-w-0"><span className={`block text-sm font-semibold ${menu.checked.includes(item.id) ? 'text-muted line-through' : 'text-text'}`}>{tIngredient(item)}</span><span className="block text-xs leading-5 text-muted">{mt('menu.shopping.needs')}{item.needs.map((need) => `${tDish(data.dishes.find((dish) => dish.id === need.dishId) ?? { id: need.dishId, name: need.dishId })} ${need.amount}`).join('、')}</span></span></label>)}</Card>;
+        })}
+        {list.items.length === 0 && <Card className="text-center text-sm text-muted">{mt('menu.shopping.empty')}</Card>}
+        <Card className="space-y-2"><h3 className="font-bold text-text">{mt('menu.shopping.confirmed')}</h3>{list.seasonings.length > 0 ? <p className="text-sm leading-6 text-muted">{list.seasonings.join('、')}</p> : <p className="text-sm text-muted">—</p>}</Card>
+        <Card className="space-y-3"><h3 className="font-bold text-text">{mt('menu.shopping.extras')}</h3>{menu.extras.map((extra) => <div key={extra.id} className="flex items-center gap-2"><input type="checkbox" checked={extra.checked} onChange={() => setMenu((previous) => ({ ...previous, extras: previous.extras.map((item) => item.id === extra.id ? { ...item, checked: !item.checked } : item) }))} /><span className={`min-w-0 flex-1 text-sm ${extra.checked ? 'text-muted line-through' : 'text-text'}`}>{extra.text}</span><button type="button" aria-label={mt('menu.shopping.delete')} className="flex h-10 w-10 items-center justify-center text-muted" onClick={() => setMenu((previous) => removeMenuExtra(previous, extra.id))}><Trash2 size={17} /></button></div>)}<div className="flex gap-2"><input value={extraText} onChange={(event) => setExtraText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addExtra(); }} className="min-w-0 flex-1 rounded-[12px] border border-line bg-surface px-3 text-sm text-text" placeholder={mt('menu.shopping.placeholder')} /><button type="button" aria-label={mt('menu.shopping.add')} onClick={addExtra} className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-food text-white"><Plus size={18} /></button></div></Card>
+      </div>}
+      {notice && <div role="status" className="fixed inset-x-5 bottom-[calc(env(safe-area-inset-bottom)+80px)] z-[70] mx-auto max-w-[440px] rounded-[14px] border border-line bg-surface px-4 py-3 text-sm font-medium text-text shadow-lg">{notice} {undoPurchase && <button type="button" className="ml-2 text-food" onClick={() => { undoPurchase(); setUndoPurchase(null); setNotice(null); }}>{mt('menu.shopping.undo')}</button>}</div>}
+    </section>
+  );
+}
+
 export function FoodPage({ data, setData }: FoodPageProps) {
   const { lang, t, tDish, tIngredient } = useLang();
+  const mt = useMenuText();
   const [activeTab, setActiveTab] = useState('wheel');
   const [meal, setMeal] = useState<Meal>(() => getMealForTime(new Date()));
   const [goalsOpen, setGoalsOpen] = useState(false);
@@ -265,7 +417,7 @@ export function FoodPage({ data, setData }: FoodPageProps) {
       <HeroCard count={availableDishes.length} onOpenGoals={() => setGoalsOpen(true)} />
 
       <SegmentedTabs
-        options={foodTabs.map((tab) => ({ ...tab, label: t(tab.label) }))}
+        options={foodTabs.map((tab) => ({ ...tab, label: tab.value === 'menu' ? mt(tab.label) : t(tab.label) }))}
         value={activeTab}
         onChange={setActiveTab}
         accent="food"
@@ -276,6 +428,8 @@ export function FoodPage({ data, setData }: FoodPageProps) {
       )}
 
       {activeTab === 'dishes' && <DishList data={data} setData={setData} />}
+
+      {activeTab === 'menu' && <WeeklyMenu data={data} setData={setData} onOpenDish={openDish} />}
 
       {activeTab === 'wheel' && (
         <section className="space-y-4">
