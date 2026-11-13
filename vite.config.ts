@@ -26,8 +26,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,woff2}'],
       },
       manifest: {
-        name: 'FitFood',
-        short_name: 'FitFood',
+        name: 'LinkFit',
+        short_name: 'LinkFit',
         display: 'standalone',
         background_color: '#F6F8F5',
         theme_color: '#F6F8F5',

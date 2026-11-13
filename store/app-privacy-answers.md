@@ -1,4 +1,4 @@
-# App Privacy Answers — FitFood
+# App Privacy Answers — LinkFit
 
 Use these answers in **App Store Connect → App Privacy** for the submitted build.
 
@@ -8,7 +8,7 @@ Use these answers in **App Store Connect → App Privacy** for the submitted bui
 
 **Answer:** **No, we do not collect data from this app.**
 
-**Reason:** FitFood does not transmit data off the device to the developer or third parties. It has no account, advertising, tracking, analytics, or data uploads. Meal records, calorie goals, training check-ins, streaks, and preferences remain on the device.
+**Reason:** LinkFit does not transmit data off the device to the developer or third parties. It has no account, advertising, tracking, analytics, or data uploads. Meal records, calorie goals, training check-ins, streaks, and preferences remain on the device.
 
 ## Data Types
 
@@ -22,7 +22,7 @@ Use these answers in **App Store Connect → App Privacy** for the submitted bui
 
 **Answer:** **No.**
 
-**Reason:** FitFood has no tracking, advertising, analytics, accounts, or third-party data sharing.
+**Reason:** LinkFit has no tracking, advertising, analytics, accounts, or third-party data sharing.
 
 ## Submission check
 

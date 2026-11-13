@@ -1,4 +1,4 @@
-# Age Rating Questionnaire Answers — FitFood
+# Age Rating Questionnaire Answers — LinkFit
 
 Use the current App Store Connect wording; labels can change. These recommendations describe the app’s declared content and capabilities.
 

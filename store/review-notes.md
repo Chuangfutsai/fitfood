@@ -1,6 +1,6 @@
-# App Review Notes — FitFood
+# App Review Notes — LinkFit
 
-FitFood does not require login, account creation, a subscription, or an internet connection to review its core features. All user-entered information remains on the device.
+LinkFit does not require login, account creation, a subscription, or an internet connection to review its core features. All user-entered information remains on the device.
 
 ## How to test
 
@@ -11,6 +11,10 @@ FitFood does not require login, account creation, a subscription, or an internet
 5. Test training: open the cardio equipment and workout-plan areas; choose a plan and review the weekly training schedule.
 6. Test check-ins: mark a training day complete and confirm that the check-in and streak count update.
 7. Test language: tap the language button in the top-right corner to switch between 繁體中文 and English.
+8. Test Today: open the 「今天」 page and confirm the calorie ring, today’s meals, and today’s training check-in are visible.
+9. Test weekly menu and shopping: create a weekly menu with the one-tap planning flow, open the generated shopping list, and mark an item bought to confirm it returns to pantry inventory.
+10. Test strength training: start a strength workout, record a weight and reps, use the rest timer, then confirm the personal-record and progress-chart views update when applicable.
+11. Test backup and restore: in the 「吃」 page, open the top-right goal icon, choose 「資料備份」, export a backup, then choose 「從備份還原」 and confirm the preview before replacing current data.
 
 ## Important health notice
 

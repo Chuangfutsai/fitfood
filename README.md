@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="public/dishes/hero.jpg" alt="FitFood" width="100%" />
+<img src="public/dishes/hero.jpg" alt="LinkFit" width="100%" />
 
-# FitFood
+# LinkFit
 
 **What should I cook today? How should I train today?**
 *One app built for fat loss — from your fridge to the gym.*
