@@ -20,23 +20,26 @@
 
 ## ✨ Features
 
+### ☀️ Today
+- **Daily dashboard** — greeting, streak, calorie ring, protein bar, meal tiles with menu plans, workout check-in, and the last 7 days
+
 ### 🥗 Food
-- **Pantry-based recipe wheel** — spin to pick a dish you can actually cook with what's in your fridge
-- **55 home-style, fat-loss recipes** — exact amounts, seasonings, step-by-step instructions, calories and protein
-- **Daily meal log** — one-tap logging, 5-second undo, automatic calorie and protein totals
-- **Pantry tracking** — toggle what you have; the wheel only shows dishes you can make
+- **Meal wheels by time of day** — breakfast, lunch, and dinner picks filtered by your pantry
+- **55 complete fat-loss recipes** — full steps plus kcal and protein for every dish
+- **Meal logging with undo** — track meals and reverse an entry when needed
+- **Personal goals** — Mifflin–St Jeor calorie targets and protein goals
+- **Weekly meal plan** — generate a week of meals and an automatic shopping list
+- **JSON backup and restore** — export your data and safely import it again
 
 ### 🏃 Fitness
-- **8 cardio machines × 24 fat-loss plans** — treadmill, stair climber, elliptical, spin bike, recumbent bike, rower, air bike, SkiErg
-- **Weekly training schedule** — cardio-first for fat loss, paired with push / pull / legs strength days
-- **Workout check-in & streaks**
+- **6-day fat-loss schedule** — a weekly cardio-first plan with a recovery day
+- **8 cardio machines × 3 programs** — treadmill, stair climber, elliptical, spin bike, recumbent bike, rower, air bike, and SkiErg
+- **Strength training plans** — push, pull, legs, and full-body routines backed by a 40-exercise library
 
 ### 🌐 More
-- Full English / Traditional Chinese support, including every recipe and workout plan
-- Privacy first — all data stays on your device, nothing is uploaded
-- Installable as a PWA
-- Data backup — export and restore your data as a file
-- Works offline
+- **English and Traditional Chinese** — localized recipes and workout plans throughout the app
+- **Offline and private** — data stays on your device; nothing is collected
+- **iPhone app** — delivered through Capacitor alongside the installable web app
 
 ---
 
@@ -67,9 +70,9 @@
 | A3 | 8 cardio machines, 24 workout plans | ✅ |
 | M1 + T2 | Breakfast / lunch / dinner, breakfast recipes, goal setup, daily calorie indicator | ✅ |
 | T1 + T5 | Engineering foundation, data export / import | ✅ |
-| T3 | Weekly meal plan + auto shopping list | ⬜ |
+| T3 | Weekly meal plan + auto shopping list | ✅ |
 | T4 | Live strength logging (weight, reps, rest timer) | ⬜ |
-| T6 | "Today" dashboard home screen | ⬜ |
+| T6 | "Today" dashboard home screen | ✅ |
 | T7 | App Store release | ⬜ |
 
 ---
